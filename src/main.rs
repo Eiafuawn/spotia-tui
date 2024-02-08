@@ -1,6 +1,8 @@
 /// Application.
 pub mod app;
 
+pub mod spotify;
+
 /// Terminal events handler.
 pub mod event;
 
@@ -19,8 +21,10 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use tui::Tui;
 use update::update;
 
-fn main() -> Result<()> {
-    let mut app = App::new();
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let mut app = App::new().await;
 
     let backend = CrosstermBackend::new(std::io::stderr());
     let terminal = Terminal::new(backend)?;

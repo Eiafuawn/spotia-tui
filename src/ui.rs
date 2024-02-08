@@ -9,7 +9,7 @@ use crate::app::App;
 pub fn render(app: &mut App, f: &mut Frame) {
     f.render_widget(Paragraph::new(format!(
             "Selected Playlist: {}",
-            app.selected_playlist
+            app.playlists_names.join("\n")
     )).block(
         Block::default()
             .borders(Borders::ALL)
