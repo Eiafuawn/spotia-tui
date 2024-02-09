@@ -1,16 +1,11 @@
 use crate::spotify::*;
 use rspotify::model::SimplifiedPlaylist;
-use std::{
-    io::{BufRead, BufReader},
-    process::{Command, Stdio},
-    sync::mpsc::Sender,
-    thread,
-};
 
 #[derive(Debug, Default)]
 pub struct App {
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist_index: usize,
+    pub offset: usize,
     pub should_quit: bool,
 }
 
@@ -33,9 +28,7 @@ impl App {
     }
 
     //// Download the selected playlist
-    pub fn download_playlist(&self) {
-            
-    }
+    pub fn download_playlist(&self) { }
 
     //// Search for a playlist
     pub fn search(&mut self) {}
@@ -44,6 +37,9 @@ impl App {
     pub fn move_up(&mut self) {
         if self.selected_playlist_index > 0 {
             self.selected_playlist_index -= 1;
+            if self.selected_playlist_index > 5 {
+                self.offset -= 1;
+            }
         }
     }
 
@@ -51,6 +47,10 @@ impl App {
     pub fn move_down(&mut self) {
         if self.selected_playlist_index < self.playlists.len() - 1 {
             self.selected_playlist_index += 1;
+            if self.selected_playlist_index > 5 {
+                self.offset += 1;
+            }
+                    
         }
     }
 }

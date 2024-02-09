@@ -5,19 +5,20 @@ use ratatui::{
     widgets::*,
 };
 
-
 pub fn render(app: &App, f: &mut Frame) {
     let main_layout = Layout::new(
-            Direction::Vertical,
-            [
-                Constraint::Length(1),
-                Constraint::Min(0),
-                Constraint::Length(1),
-            ],
-        )
-        .split(f.size());
+        Direction::Vertical,
+        [
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ],
+    )
+    .split(f.size());
     f.render_widget(
-        Block::new().borders(Borders::TOP).title("Select a playlist to download"),
+        Block::new()
+            .borders(Borders::TOP)
+            .title("Select a playlist to download"),
         main_layout[0],
     );
     f.render_widget(
@@ -34,9 +35,10 @@ pub fn render(app: &App, f: &mut Frame) {
     let list_items: Vec<ListItem> = app
         .playlists
         .iter()
+        .skip(app.offset)
         .enumerate()
         .map(|(i, item)| {
-            let style = if i == app.selected_playlist_index {
+            let style = if i == app.selected_playlist_index - app.offset {
                 Style::default().bg(Color::Yellow).fg(Color::Black)
             } else {
                 Style::default()
@@ -45,7 +47,7 @@ pub fn render(app: &App, f: &mut Frame) {
         })
         .collect();
 
-    let menu = List::new(list_items)
+    let menu = List::new(list_items.clone())
         .block(Block::default().borders(Borders::ALL))
         .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
