@@ -1,16 +1,37 @@
+use std::sync::mpsc;
+use crate::app::App;
 use ratatui::{
     prelude::*,
     style::{Color, Style},
     widgets::*,
+    text::Text,
 };
 
-use crate::app::App;
 
 pub fn render(app: &App, f: &mut Frame) {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(100)].as_ref())
+    let main_layout = Layout::new(
+            Direction::Vertical,
+            [
+                Constraint::Length(1),
+                Constraint::Min(0),
+                Constraint::Length(1),
+            ],
+        )
         .split(f.size());
+    f.render_widget(
+        Block::new().borders(Borders::TOP).title("Select a playlist to download"),
+        main_layout[0],
+    );
+    f.render_widget(
+        Block::new().borders(Borders::TOP).title("Status Bar"),
+        main_layout[2],
+    );
+
+    let chunks = Layout::new(
+        Direction::Horizontal,
+        [Constraint::Percentage(50), Constraint::Percentage(50)],
+    )
+    .split(main_layout[1]);
 
     let list_items: Vec<ListItem> = app
         .playlists
@@ -30,103 +51,29 @@ pub fn render(app: &App, f: &mut Frame) {
         .block(Block::default().borders(Borders::ALL))
         .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
-    f.render_widget(menu, chunks[0]); 
+    f.render_widget(menu, chunks[0]);
+    //render_download_output(f, chunks[1], app);
 }
-/*
-pub fn render(app: &mut App, f: &mut Frame) {
-    f.render_widget(Paragraph::new(format!(
-            "Selected Playlist: {}",
-            app.playlists_names.join("\n")
-    )).block(
-        Block::default()
+
+fn render_download_output(f: &mut Frame, chunk: Rect, app: &App) {
+    let (sender, receiver) = mpsc::channel();
+
+    // Start downloading the playlist in a separate thread
+    app.download_playlist(sender.clone());
+
+    // Render the output in the second chunk (chunks[1]) dynamically
+    let mut output_content = Vec::new();
+    while let Ok(line) = receiver.recv() {
+        output_content.push(Text::raw(line));
+        // Re-render the output block with updated content
+        let output_block = Block::default()
+            .title("Output")
             .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .title("Playlists downloader")
-            .title_alignment(Alignment::Center)
-        )
-        .style(Style::default().fg(Color::Blue))
-        .alignment(Alignment::Center),
-        f.size()
-        );
-    }
+            .border_style(Style::default().fg(Color::Cyan));
 
-// Define an enum to represent the different UI states
-
-fn menu(frame: &mut Frame) {
-    let main_layout = Layout::new(
-        Direction::Vertical,
-        [
-            Constraint::Length(1),
-            Constraint::Min(0),
-            Constraint::Length(1),
-        ],
-    )
-    .split(frame.size());
-    frame.render_widget(
-        Block::new().borders(Borders::TOP).title("Title Bar"),
-        main_layout[0],
-    );
-    frame.render_widget(
-        Block::new().borders(Borders::TOP).title("Status Bar"),
-        main_layout[2],
-    );
-
-    let inner_layout = Layout::new(
-        Direction::Vertical,
-        [Constraint::Percentage(50), Constraint::Percentage(50)],
-    )
-    .split(main_layout[1]);
-    frame.render_widget(
-        Paragraph::new("Hello left block")
-            .block(Block::default().borders(Borders::ALL).title("Left")),
-        inner_layout[0],
-    );
-    frame.render_widget(
-        Paragraph::new("Hello right block")
-            .block(Block::default().borders(Borders::ALL).title("Right")),
-        inner_layout[1],
-    );
-}
-
-fn downloads(frame: &mut Frame) {
-    // Define the UI for the 'Other' state here
-}
-
-fn handle_events() -> io::Result<bool> {
-    if event::poll(std::time::Duration::from_millis(50))? {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(true);
-            }
+        for text in output_content.iter() {
+            f.render_widget(text.clone(), chunk);
         }
+        f.render_widget(output_block, chunk);
     }
-    Ok(false)
 }
-
-fn startup() -> Result<()> {
-  enable_raw_mode()?;
-  execute!(std::io::stderr(), EnterAlternateScreen)?;
-  Ok(())
-}
-
-fn shutdown() -> Result<()> {
-  execute!(std::io::stderr(), LeaveAlternateScreen)?;
-  disable_raw_mode()?;
-  Ok(())
-}
-
-fn run() -> Result<()> {
-    let mut t = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
-    let mut app = App { 
-        main_menu: menu, 
-        downloads_menu: downloads 
-    };
-
-    loop {
-        t.draw(|f| (app.main_menu)(f))?;
-        if handle_events()? {
-            break;
-        }
-    }
-    Ok(())
-}*/
