@@ -2,6 +2,14 @@ use rspotify::model::SimplifiedPlaylist;
 
 use crate::spotify::playlists;
 
+pub enum Action {
+    Tick,
+    Increment,
+    Decrement,
+    Quit,
+    None,
+}
+
 #[derive(Debug, Default)]
 pub struct App {
     pub playlists: Vec<SimplifiedPlaylist>,
