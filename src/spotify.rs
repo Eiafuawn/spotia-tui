@@ -5,6 +5,8 @@ use rspotify::{
     Config, Credentials, OAuth 
 };
 
+use crate::app::App;
+
 async fn auth() -> AuthCodeSpotify {
     let config = Config { ..Default::default() };
 
@@ -27,6 +29,11 @@ async fn get_playlists(spotify: &AuthCodeSpotify) -> Vec<SimplifiedPlaylist> {
         playlists.push(item);
     }
     playlists
+}
+
+pub fn get_playlist_uri(app: &App) -> String {
+    let uri = format!("{}", app.playlists[app.selected_playlist_index].id);
+    uri
 }
 
 pub async fn playlists() -> Vec<SimplifiedPlaylist> {
