@@ -4,28 +4,26 @@ use crate::spotify::playlists;
 
 pub enum Action {
     Tick,
-    Increment,
-    Decrement,
+    MoveUp,
+    MoveDown,
     Quit,
     None,
 }
 
+
 #[derive(Debug, Default)]
 pub struct App {
     pub playlists: Vec<SimplifiedPlaylist>,
-    pub playlists_names: Vec<String>,
-    pub selected_playlist: String,
+    pub selected_playlist_index: usize,
     pub should_quit: bool
 }
 
 impl App {
     /// Constructs a new instance of [`App`].
     pub async fn new() -> Self {
-        let playlists = playlists().await;
-        let playlists_names: Vec<String> = playlists.iter().map(|p| p.name.clone()).collect();
+        let playlists = playlists().await;                                        
         Self {
             playlists,
-            playlists_names,
             ..Default::default()
         }
     }
@@ -44,6 +42,14 @@ impl App {
     // Search for a playlist
     pub fn search(&mut self) {}
 
-    pub fn move_up(&mut self) {}
-    pub fn move_down(&mut self) {}
+    pub fn move_up(&mut self) {
+        if self.selected_playlist_index > 0 {
+            self.selected_playlist_index -= 1;
+        }
+    }
+    pub fn move_down(&mut self) {
+        if self.selected_playlist_index < self.playlists.len() - 1 {
+            self.selected_playlist_index += 1;
+        }
+    }
 }

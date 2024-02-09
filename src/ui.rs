@@ -1,11 +1,38 @@
 use ratatui::{
-    prelude::{Alignment, Frame},
+    prelude::*,
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::*,
 };
 
 use crate::app::App;
 
+pub fn render(app: &App, f: &mut Frame) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .split(f.size());
+
+    let list_items: Vec<ListItem> = app
+        .playlists
+        .iter()
+        .enumerate()
+        .map(|(i, item)| {
+            let style = if i == app.selected_playlist_index {
+                Style::default().bg(Color::Yellow).fg(Color::Black)
+            } else {
+                Style::default()
+            };
+            ListItem::new(item.name.clone()).style(style)
+        })
+        .collect();
+
+    let menu = List::new(list_items)
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
+
+    f.render_widget(menu, chunks[0]); 
+}
+/*
 pub fn render(app: &mut App, f: &mut Frame) {
     f.render_widget(Paragraph::new(format!(
             "Selected Playlist: {}",
@@ -22,7 +49,7 @@ pub fn render(app: &mut App, f: &mut Frame) {
         f.size()
         );
     }
-/*
+
 // Define an enum to represent the different UI states
 
 fn menu(frame: &mut Frame) {
