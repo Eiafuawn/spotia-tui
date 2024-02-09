@@ -42,5 +42,7 @@ async fn main() -> Result<()> {
             Event::Resize(_, _) => {}
         };
     }
+
+    tui.exit()?;
     Ok(())
 }
