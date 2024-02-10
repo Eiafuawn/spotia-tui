@@ -32,7 +32,7 @@ pub fn render(app: &App, f: &mut Frame) {
     )
     .split(main_layout[1]);
 
-    let list_items: Vec<ListItem> = app
+    let playlists: Vec<ListItem> = app
         .playlists
         .iter()
         .skip(app.offset)
@@ -47,9 +47,23 @@ pub fn render(app: &App, f: &mut Frame) {
         })
         .collect();
 
-    let menu = List::new(list_items.clone())
+    let menu = List::new(playlists.clone())
         .block(Block::default().borders(Borders::ALL))
         .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
     f.render_widget(menu, chunks[0]);
+
+    let playlist_items: Vec<ListItem> = app
+        .playlists
+        .iter()
+        .enumerate()
+        .map(|(i, item)| {
+            let style = if i == app.selected_playlist_index - app.offset {
+                Style::default().bg(Color::Yellow).fg(Color::Black)
+            } else {
+                Style::default()
+            };
+            ListItem::new(item.name.clone()).style(style)
+        })
+        .collect();
 }

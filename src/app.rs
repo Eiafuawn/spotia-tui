@@ -1,8 +1,9 @@
-use crate::spotify::*;
+use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
 
 #[derive(Debug, Default)]
 pub struct App {
+    pub spotify: Spotify,
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist_index: usize,
     pub offset: usize,
@@ -12,8 +13,10 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub async fn new() -> Self {
-        let playlists = playlists().await;
+        let spotify = Spotify::new().await;
+        let playlists = spotify.get_playlists().await;
         Self {
+            spotify,
             playlists,
             ..Default::default()
         }
