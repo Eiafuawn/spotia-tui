@@ -35,7 +35,7 @@ impl App {
 
     /// Moves the selection cursor up.
     pub fn move_up(&mut self) {
-        if self.selected_playlist_index > 0 {
+        if self.selected_playlist_index > self.offset {
             self.selected_playlist_index -= 1;
             if self.selected_playlist_index > 5 {
                 self.offset -= 1;
@@ -50,7 +50,6 @@ impl App {
             if self.selected_playlist_index > 5 {
                 self.offset += 1;
             }
-                    
         }
     }
 }
