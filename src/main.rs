@@ -33,6 +33,9 @@ async fn main() -> Result<()> {
     tui.enter()?;
 
     while !app.should_quit {
+        if app.downloaded {
+            tui.download(&mut app)?;
+        }
         tui.draw(&mut app)?;
 
         match tui.events.next()? {

@@ -33,15 +33,14 @@ impl Spotify {
         let stream = self.spotify.current_user_playlists();
         let mut playlists = vec![];
         pin_mut!(stream);
-        println!("Items (blocking): ");
         while let Some(item) = stream.try_next().await.unwrap() {
             playlists.push(item);
         }
         playlists
     }
 
-    pub fn get_playlist_uri(&self, app: &App) -> String {
-        app.playlists[app.selected_playlist_index].id.uri()
+    pub fn get_playlist_url(&self, app: &App) -> String {
+        app.playlists[app.selected_playlist_index].id.url()
     }
 
     pub async fn get_tracks(&self, app: &App) -> FullPlaylist {

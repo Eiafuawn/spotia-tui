@@ -12,6 +12,7 @@ pub fn update(app: &mut App, key_event: KeyEvent) {
         }
         KeyCode::Up | KeyCode::Char('k') => app.move_up(),
         KeyCode::Down | KeyCode::Char('j') => app.move_down(),
+        KeyCode::Enter => app.downloaded = true,
         _ => {}
     };
 }

@@ -1,5 +1,6 @@
 use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
+use std::process::{Command, Stdio};
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -8,6 +9,7 @@ pub struct App {
     pub selected_playlist_index: usize,
     pub offset: usize,
     pub should_quit: bool,
+    pub downloaded: bool,
 }
 
 impl App {
@@ -31,7 +33,16 @@ impl App {
     }
 
     //// Download the selected playlist
-    pub fn download_playlist(&self) { }
+    pub fn download_playlist(&mut self) {
+        let url = self.spotify.get_playlist_url(self);
+        let output = Command::new("spotdl")
+            .arg(url)
+            .current_dir("/home/myschkin/Music")
+            .stdout(Stdio::piped())  // Redirect stdout to a pipe
+            .output()
+            .expect("Failed to execute spotdl");
+        println!("{}", output.status);
+    }
 
     //// Search for a playlist
     pub fn search(&mut self) {}
