@@ -5,7 +5,7 @@ use ratatui::{
     widgets::*,
 };
 
-pub fn render(app: &App, f: &mut Frame) {
+pub fn render(app: &mut App, f: &mut Frame) {
     let main_layout = Layout::new(
         Direction::Vertical,
         [
@@ -52,18 +52,4 @@ pub fn render(app: &App, f: &mut Frame) {
         .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
     f.render_widget(menu, chunks[0]);
-
-    let playlist_items: Vec<ListItem> = app
-        .playlists
-        .iter()
-        .enumerate()
-        .map(|(i, item)| {
-            let style = if i == app.selected_playlist_index - app.offset {
-                Style::default().bg(Color::Yellow).fg(Color::Black)
-            } else {
-                Style::default()
-            };
-            ListItem::new(item.name.clone()).style(style)
-        })
-        .collect();
 }
