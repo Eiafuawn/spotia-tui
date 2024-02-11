@@ -63,7 +63,7 @@ impl Tui {
 
     pub fn download(&mut self, app: &mut App) -> Result<()> {
         Self::exit(self)?;
-        app.download_playlist();
+        let _ = app.download_playlist();
         Self::enter(self)?;
         Ok(())
     }

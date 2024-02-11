@@ -1,6 +1,6 @@
 use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
-use std::process::{Command, Stdio};
+use std::{io::{self, BufRead, BufReader}, process::{Command, Stdio}};
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -33,15 +33,27 @@ impl App {
     }
 
     //// Download the selected playlist
-    pub fn download_playlist(&mut self) {
+    pub fn download_playlist(&mut self) -> io::Result<()>{
         let url = self.spotify.get_playlist_url(self);
-        let output = Command::new("spotdl")
+        let mut cmd = Command::new("spotdl")
             .arg(url)
             .current_dir("/home/myschkin/Music")
             .stdout(Stdio::piped())  // Redirect stdout to a pipe
-            .output()
-            .expect("Failed to execute spotdl");
-        println!("{}", output.status);
+            .spawn()?;
+
+        if let Some(stdout) = cmd.stdout.take() {
+            self.downloaded = false;
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                println!("{}", line?); // Print each line of output
+            }
+        }
+
+        // Wait for the command to finish
+        let output = cmd.wait()?;
+        println!("Command exited with: {}", output);
+        
+        Ok(())
     }
 
     //// Search for a playlist
