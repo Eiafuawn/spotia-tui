@@ -2,14 +2,29 @@ use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
 use std::{io::{self, BufRead, BufReader}, process::{Command, Stdio}};
 
+#[derive(Debug)]
+pub enum CurrentScreen {
+    Main,
+    Editing,
+    Exiting,
+}
+
+impl Default for CurrentScreen {
+    fn default() -> Self {
+        Self::Main
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct App {
+    pub current_screen: CurrentScreen,
     pub spotify: Spotify,
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist_index: usize,
     pub offset: usize,
     pub should_quit: bool,
     pub downloaded: bool,
+    pub key_input: String,
 }
 
 impl App {
@@ -35,23 +50,22 @@ impl App {
     //// Download the selected playlist
     pub fn download_playlist(&mut self) -> io::Result<()>{
         let url = self.spotify.get_playlist_url(self);
-        let mut cmd = Command::new("spotdl")
+        let stdout = Command::new("spotdl")
             .arg(url)
-            .current_dir("/home/myschkin/Music")
+            .current_dir(self.key_input.clone())
             .stdout(Stdio::piped())  // Redirect stdout to a pipe
-            .spawn()?;
+            .spawn()?
+            .stdout
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to execute command"))?;
 
-        if let Some(stdout) = cmd.stdout.take() {
-            self.downloaded = false;
-            let reader = BufReader::new(stdout);
-            for line in reader.lines() {
-                println!("{}", line?); // Print each line of output
-            }
-        }
+        let reader = BufReader::new(stdout);
 
-        // Wait for the command to finish
-        let output = cmd.wait()?;
-        println!("Command exited with: {}", output);
+        reader.lines()
+            .map_while(|line| line.ok())
+            .for_each(|line| { println!("{}", line); });
+
+        self.key_input.clear();
+        self.downloaded = true;
         
         Ok(())
     }

@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, CurrentScreen};
 use ratatui::{
     prelude::*,
     style::{Color, Style},
@@ -52,4 +52,41 @@ pub fn render(app: &mut App, f: &mut Frame) {
         .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
     f.render_widget(menu, chunks[0]);
+
+    if let CurrentScreen::Editing = app.current_screen {
+        f.render_widget(Clear, f.size()); //this clears the entire screen and anything already drawn
+        let popup_block = Block::default()
+            .title("Choose your folder")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let popup = Paragraph::new(app.key_input.clone())
+            .style(Style::default().fg(Color::White))
+            .block(popup_block);
+
+        let area = centered_rect(60, 25, f.size());
+        f.render_widget(popup, area);
+    }
+}
+
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    // Cut the given rectangle into three vertical pieces
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    // Then cut the middle vertical piece into three width-wise pieces
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1] // Return the middle chunk
 }
