@@ -18,7 +18,8 @@ pub fn update(app: &mut App, key_event: KeyEvent) {
             }
             CurrentScreen::Editing => match key_event.code {
                 KeyCode::Enter => {
-                    let _ = app.download_playlist();
+                    app.current_screen = CurrentScreen::Main;
+                    app.downloaded = true;
                 }
                 KeyCode::Backspace => {
                     app.key_input.pop();

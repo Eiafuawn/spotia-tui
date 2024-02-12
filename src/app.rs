@@ -5,8 +5,7 @@ use std::{io::{self, BufRead, BufReader}, process::{Command, Stdio}};
 #[derive(Debug)]
 pub enum CurrentScreen {
     Main,
-    Editing,
-    Exiting,
+    Editing, Exiting,
 }
 
 impl Default for CurrentScreen {
@@ -65,7 +64,7 @@ impl App {
             .for_each(|line| { println!("{}", line); });
 
         self.key_input.clear();
-        self.downloaded = true;
+        self.downloaded = false;
         
         Ok(())
     }

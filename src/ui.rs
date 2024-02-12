@@ -57,11 +57,11 @@ pub fn render(app: &mut App, f: &mut Frame) {
         f.render_widget(Clear, f.size()); //this clears the entire screen and anything already drawn
         let popup_block = Block::default()
             .title("Choose your folder")
-            .borders(Borders::NONE)
-            .style(Style::default().bg(Color::DarkGray));
+            .borders(Borders::ALL)
+            .style(Style::default().bg(Color::Gray));
 
         let popup = Paragraph::new(app.key_input.clone())
-            .style(Style::default().fg(Color::White))
+            .style(Style::default().bg(Color::White).fg(Color::Black))
             .block(popup_block);
 
         let area = centered_rect(60, 25, f.size());

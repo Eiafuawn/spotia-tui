@@ -61,10 +61,10 @@ impl Tui {
         Ok(())
     }
 
-    /* pub fn download(&mut self, app: &mut App) -> Result<()> {
+    pub fn download(&mut self, app: &mut App) -> Result<()> {
         Self::exit(self)?;
         let _ = app.download_playlist();
         Self::enter(self)?;
         Ok(())
-    } */
+    }
 }
