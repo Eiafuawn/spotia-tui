@@ -1,7 +1,8 @@
 use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
 use std::{
-    fs, 
+    fs,
+    env,
     io::{self, BufRead, BufReader, Write}, 
     path::Path, 
     process::{Command, Stdio},
@@ -36,9 +37,12 @@ impl App {
     pub async fn new() -> Self {
         let spotify = Spotify::new().await;
         let playlists = spotify.get_playlists().await;
+        let key_input = env::var("HOME")
+            .unwrap_or("".to_string());
         Self {
             spotify,
             playlists,
+            key_input,
             ..Default::default()
         }
     }
