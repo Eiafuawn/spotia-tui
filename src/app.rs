@@ -50,7 +50,7 @@ impl App {
     pub fn download_playlist(&mut self) -> io::Result<()>{
         let url = self.spotify.get_playlist_url(self);
         let stdout = Command::new("spotdl")
-            .arg(url)
+            .args([url, "--simple-tui".to_string()])
             .current_dir(self.key_input.clone())
             .stdout(Stdio::piped())  // Redirect stdout to a pipe
             .spawn()?
