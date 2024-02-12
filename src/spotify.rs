@@ -43,6 +43,10 @@ impl Spotify {
         app.playlists[app.selected_playlist_index].id.url()
     }
 
+    pub fn get_playlist_name(&self, app: &App) -> String {
+        app.playlists[app.selected_playlist_index].name.clone()
+    }
+
     pub async fn get_tracks(&self, app: &App) -> FullPlaylist {
         let id = app.playlists[app.selected_playlist_index].id.clone();
         self.spotify.playlist(
