@@ -35,6 +35,7 @@ async fn main() -> Result<()> {
     while !app.should_quit {
          if app.downloaded {
             tui.download(&mut app)?;
+            app.downloaded = false;
         }
         tui.draw(&mut app)?;
 
