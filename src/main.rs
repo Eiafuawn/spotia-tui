@@ -20,12 +20,14 @@ async fn main() -> AppResult<()> {
 
     // Start the main loop.
     while app.running {
-        if app.downloaded {
-            tui.download(&mut app)?;
-            app.downloaded = false;
-        }
         // Render the user interface.
         tui.draw(&mut app)?;
+
+        if app.downloaded {
+            // tui.download(&mut app)?
+            app.select_playlist()?;
+            app.downloaded = false;
+        }
         // Handle events.
         match tui.events.next().await? {
             Event::Tick => app.tick(),

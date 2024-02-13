@@ -55,6 +55,12 @@ pub fn render(app: &mut App, f: &mut Frame) {
 
     f.render_widget(menu, chunks[0]);
 
+    let test = Paragraph::new(app.output.clone())
+        .style(Style::default().fg(Color::Black).bg(Color::White))
+        .block(Block::default().borders(Borders::ALL).title("Output"));
+
+    f.render_widget(test, chunks[1]);
+
     if let CurrentScreen::Editing = app.current_screen {
         f.render_widget(Clear, f.size()); //this clears the entire screen and anything already drawn
         let popup_block = Block::default()

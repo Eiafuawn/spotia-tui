@@ -34,6 +34,7 @@ pub struct App {
     pub selected_playlist_index: usize,
     pub offset: usize,
     pub key_input: String,
+    pub output: String,
     pub downloaded: bool,
 }
 
@@ -45,6 +46,7 @@ impl Default for App {
             downloaded: false,
             spotify: Spotify::default(),
             key_input: String::new(),
+            output: String::new(),
             playlists: vec![],
             selected_playlist_index: 0,
             offset: 0,
@@ -83,18 +85,20 @@ impl App {
         let dir_path = Path::new(&dir);
 
         if let Err(err) = clear_terminal() {
-            eprintln!("Error clearing terminal: {}", err);
+            self.output.push_str(&format!("Error clearing terminal: {}", err));
+                    
         }
 
         if !dir_path.exists() {
             if let Err(err) = fs::create_dir_all(dir_path) {
-                eprintln!("Error creating directory: {}", err);
+                self.output.push_str(&format!("Error creating directory: {}", err));
+                            
             } else {
-                println!("Directory {} created successfully!", dir);
+                self.output.push_str(&format!("Directory {} created successfully!", dir));
                 self.download_playlist(url, dir)?;
             }
         } else {
-            println!("Directory already exists!");
+            self.output.push_str(&format!("Directory {} already exists!", dir));
             self.sync_playlist(dir_path)?;
         }
         Ok(())
@@ -102,6 +106,7 @@ impl App {
 
     //// Sync the selected playlist
     fn sync_playlist(&mut self, dir: &Path) -> AppResult<()> {
+        self.output.push_str("Syncing playlist...");
         let stdout = Command::new("spotdl")
                     .args(["sync".to_string(), "save.spotdl".to_string()])
                     .current_dir(dir)
@@ -114,7 +119,11 @@ impl App {
 
         reader.lines()
             .map_while(|line| line.ok())
-            .for_each(|line| { println!("{}", line); });
+            .for_each(|line| {
+                self.output.push_str(&line);
+                self.output.push('\n');
+                            
+            });
 
         self.key_input.clear();
         self.downloaded = false;
@@ -123,7 +132,7 @@ impl App {
     }
     
     fn download_playlist(&mut self, url: String, dir: String) -> io::Result<()> {
-        println!("Downloading playlist...");
+        self.output.push_str("Downloading playlist...");
         let stdout = Command::new("spotdl")
             .args(["sync".to_string(), url, "--save-file".to_string(), "save.spotdl".to_string(), "--simple-tui".to_string()])
             .current_dir(dir)
@@ -136,7 +145,11 @@ impl App {
 
         reader.lines()
             .map_while(|line| line.ok())
-            .for_each(|line| { println!("{}", line); });
+            .for_each(|line| {
+                self.output.push_str(&line);
+                self.output.push('\n');
+                            
+            });
 
         self.key_input.clear();
         self.downloaded = false;
