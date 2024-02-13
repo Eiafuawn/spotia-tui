@@ -1322,7 +1322,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "spotia2"
+name = "spotia"
 version = "0.1.0"
 dependencies = [
  "crossterm",

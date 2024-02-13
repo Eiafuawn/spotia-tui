@@ -1,5 +1,5 @@
 [package]
-name = "spotia2"
+name = "spotia"
 version = "0.1.0"
 authors = ["myschkin <kenan.henzelin@proton.me>"]
 license = "MIT"

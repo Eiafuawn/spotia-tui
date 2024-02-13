@@ -1,7 +1,7 @@
-use spotia2::app::{App, AppResult};
-use spotia2::event::{Event, EventHandler};
-use spotia2::handler::handle_key_events;
-use spotia2::tui::Tui;
+use spotia::app::{App, AppResult};
+use spotia::event::{Event, EventHandler};
+use spotia::handler::handle_key_events;
+use spotia::tui::Tui;
 use std::io;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
