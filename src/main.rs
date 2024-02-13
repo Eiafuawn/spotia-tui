@@ -1,52 +1,41 @@
-/// Application.
-pub mod app;
-
-pub mod spotify;
-
-/// Terminal events handler.
-pub mod event;
-
-/// Widget renderer.
-pub mod ui;
-
-/// Terminal user interface.
-pub mod tui;
-
-/// Application updater.
-pub mod update;
-use app::App;
-use color_eyre::Result;
-use event::{Event, EventHandler};
-use ratatui::{backend::CrosstermBackend, Terminal};
-use tui::Tui;
-use update::update;
-
+use spotia2::app::{App, AppResult};
+use spotia2::event::{Event, EventHandler};
+use spotia2::handler::handle_key_events;
+use spotia2::tui::Tui;
+use std::io;
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> AppResult<()> {
+    // Create an application.
     let mut app = App::new().await;
 
-    let backend = CrosstermBackend::new(std::io::stderr());
+    // Initialize the terminal user interface.
+    let backend = CrosstermBackend::new(io::stderr());
     let terminal = Terminal::new(backend)?;
     let events = EventHandler::new(250);
     let mut tui = Tui::new(terminal, events);
-    tui.enter()?;
+    tui.init()?;
 
-    while !app.should_quit {
-         if app.downloaded {
+    // Start the main loop.
+    while app.running {
+        if app.downloaded {
             tui.download(&mut app)?;
             app.downloaded = false;
         }
+        // Render the user interface.
         tui.draw(&mut app)?;
-
-        match tui.events.next()? {
-            Event::Tick => {}
-            Event::Key(key) => update(&mut app, key),
+        // Handle events.
+        match tui.events.next().await? {
+            Event::Tick => app.tick(),
+            Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
             Event::Mouse(_) => {}
             Event::Resize(_, _) => {}
-        };
+        }
     }
 
+    // Exit the user interface.
     tui.exit()?;
     Ok(())
 }

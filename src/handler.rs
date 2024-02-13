@@ -1,8 +1,8 @@
+use crate::app::{App, AppResult, CurrentScreen};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::app::{App, CurrentScreen};
-
-pub fn update(app: &mut App, key_event: KeyEvent) {
+/// Handles the key events and updates the state of [`App`].
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         match app.current_screen {
             CurrentScreen::Main => match key_event.code {
                 KeyCode::Esc | KeyCode::Char('q') => app.quit(),
@@ -34,4 +34,5 @@ pub fn update(app: &mut App, key_event: KeyEvent) {
             }
             _ => {}
         };
+    Ok(())
 }

@@ -1,10 +1,12 @@
-use crate::app::{App, CurrentScreen};
 use ratatui::{
     prelude::*,
     style::{Color, Style},
     widgets::*,
 };
 
+use crate::app::{App, CurrentScreen};
+
+/// Renders the user interface widgets.
 pub fn render(app: &mut App, f: &mut Frame) {
     let main_layout = Layout::new(
         Direction::Vertical,
@@ -66,8 +68,7 @@ pub fn render(app: &mut App, f: &mut Frame) {
 
         let area = centered_rect(60, 25, f.size());
         f.render_widget(popup, area);
-    }
-}
+    }}
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     // Cut the given rectangle into three vertical pieces

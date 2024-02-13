@@ -2,11 +2,13 @@ use crate::spotify::Spotify;
 use rspotify::model::SimplifiedPlaylist;
 use std::{
     fs,
+    error,
     env,
     io::{self, BufRead, BufReader, Write}, 
     path::Path, 
     process::{Command, Stdio},
-};
+};/// Application result type.
+pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug)]
 pub enum CurrentScreen {
@@ -20,16 +22,34 @@ impl Default for CurrentScreen {
     }
 }
 
-#[derive(Debug, Default)]
+/// Application.
+#[derive(Debug)]
 pub struct App {
+    /// Is the application running?
+    pub running: bool,
+    /// Current screen.
     pub current_screen: CurrentScreen,
     pub spotify: Spotify,
     pub playlists: Vec<SimplifiedPlaylist>,
     pub selected_playlist_index: usize,
     pub offset: usize,
-    pub should_quit: bool,
-    pub downloaded: bool,
     pub key_input: String,
+    pub downloaded: bool,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            current_screen: CurrentScreen::Main,
+            running: true,
+            downloaded: false,
+            spotify: Spotify::default(),
+            key_input: String::new(),
+            playlists: vec![],
+            selected_playlist_index: 0,
+            offset: 0,
+        }
+    }
 }
 
 impl App {
@@ -52,11 +72,11 @@ impl App {
 
     /// Set should_quit to true to quit the application.
     pub fn quit(&mut self) {
-        self.should_quit = true;
+        self.running = false;
     }
 
     //// Download the selected playlist
-    pub fn select_playlist(&mut self) -> io::Result<()>{
+    pub fn select_playlist(&mut self) -> AppResult<()>{
         let url = self.spotify.get_playlist_url(self);
         let name = self.spotify.get_playlist_name(self).replace(' ', "");
         let dir = self.key_input.clone() + "/" + &name;
@@ -81,7 +101,7 @@ impl App {
     }
 
     //// Sync the selected playlist
-    fn sync_playlist(&mut self, dir: &Path) -> io::Result<()> {
+    fn sync_playlist(&mut self, dir: &Path) -> AppResult<()> {
         let stdout = Command::new("spotdl")
                     .args(["sync".to_string(), "save.spotdl".to_string()])
                     .current_dir(dir)
@@ -148,7 +168,7 @@ impl App {
     }
 }
 
-fn clear_terminal() -> io::Result<()> {
+fn clear_terminal() -> AppResult<()> {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
