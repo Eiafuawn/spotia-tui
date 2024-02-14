@@ -1,10 +1,10 @@
 use std::{
-    collections::HashMap, 
-    time::Duration,
-    fs, 
-    env,
+    collections::HashMap,
+    env, fs,
     io::{self, BufRead, BufReader, Write},
-    path::Path, process::{Command, Stdio}
+    path::Path,
+    process::{Command, Stdio},
+    time::Duration,
 };
 
 use color_eyre::eyre::Result;
@@ -16,7 +16,11 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use super::{Component, Frame};
 use crate::{
-    action::Action, app, config::{Config, KeyBindings}, mode::Mode, spotify::Spotify
+    action::Action,
+    app,
+    config::{Config, KeyBindings},
+    mode::Mode,
+    spotify::Spotify,
 };
 
 #[derive(Default)]
@@ -24,120 +28,40 @@ pub struct Home {
     mode: Mode,
     playlist_index: usize,
     offset: usize,
-    spotify: Spotify,
-    download_output: String,
+    playlists: Vec<SimplifiedPlaylist>,
     key_input: String,
     command_tx: Option<UnboundedSender<Action>>,
     config: Config,
 }
 
 impl Home {
-    pub fn new(spotify: Spotify) -> Self {
-        Self{
+    pub fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
+        Self {
             mode: Mode::Home,
-            spotify,
-            key_input: env::var("HOME")
-                .unwrap_or("".to_string()),
+            playlists,
+            key_input: env::var("HOME").unwrap_or("".to_string()),
             ..Default::default()
         }
     }
-   /// Moves the selection cursor up.
+    /// Moves the selection cursor up.
     pub fn move_up(&mut self) {
         if self.playlist_index > 0 {
             self.playlist_index -= 1;
             if self.offset > 0 {
                 self.offset -= 1;
-                            
             }
         }
     }
 
     /// Moves the selection cursor down.
     pub fn move_down(&mut self) {
-        if self.playlist_index < self.spotify.playlists.len() - 1 {
+        if self.playlist_index < self.playlists.len() - 1 {
             self.playlist_index += 1;
             if self.playlist_index - self.offset > 5 {
                 self.offset += 1;
             }
         }
     }
-
-    //// Download the selected playlist
-    pub fn select_playlist(&mut self) -> Result<()>{
-        let url = self.spotify.get_playlist_url(self.playlist_index);
-        let name = self.spotify.get_playlist_name(self.playlist_index)
-            .replace(' ', "");
-        let dir = self.key_input.clone() + "/" + &name;
-        let dir_path = Path::new(&dir);
-
-        if !dir_path.exists() {
-            if let Err(err) = fs::create_dir_all(dir_path) {
-                self.download_output.push_str(&format!("Error creating directory: {}", err));
-                            
-            } else {
-                self.download_output.push_str(&format!("Directory {} created successfully!", dir));
-                self.download_playlist(url, dir)?;
-            }
-        } else {
-            self.download_output.push_str(&format!("Directory {} already exists!", dir));
-            self.sync_playlist(dir_path)?;
-        }
-
-        self.mode = Mode::Home;
-        Ok(())
-    }
-
-    //// Sync the selected playlist
-    fn sync_playlist(&mut self, dir: &Path) -> Result<()> {
-        self.download_output.push_str("Syncing playlist...");
-        let stdout = Command::new("spotdl")
-                    .args(["sync".to_string(), "save.spotdl".to_string()])
-                    .current_dir(dir)
-                    .stdout(Stdio::piped())  // Redirect stdout to a pipe
-                    .spawn()?
-                    .stdout
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to execute command"))?;
-
-        let reader = BufReader::new(stdout);
-
-        reader.lines()
-            .map_while(|line| line.ok())
-            .for_each(|line| {
-                self.download_output.push_str(&line);
-                self.download_output.push('\n');
-                            
-            });
-
-        self.key_input.clear();
-        
-        Ok(())
-    }
-    
-    fn download_playlist(&mut self, url: String, dir: String) -> Result<()> {
-        self.download_output.push_str("Downloading playlist...");
-        let stdout = Command::new("spotdl")
-            .args(["sync".to_string(), url, "--save-file".to_string(), "save.spotdl".to_string(), "--simple-tui".to_string()])
-            .current_dir(dir)
-            .stdout(Stdio::piped())  // Redirect stdout to a pipe
-            .spawn()?
-            .stdout
-            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to execute command"))?;
-
-        let reader = BufReader::new(stdout);
-
-        reader.lines()
-            .map_while(|line| line.ok())
-            .for_each(|line| {
-                self.download_output.push_str(&line);
-                self.download_output.push('\n');
-                            
-            });
-
-        self.key_input.clear();
-        
-        Ok(())
-    }
-
 }
 
 impl Component for Home {
@@ -154,55 +78,52 @@ impl Component for Home {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         match action {
             Action::Tick => {}
-            Action::SelectPlaylist => {
-                self.mode = Mode::Home;
-                self.select_playlist()?
-            },
             Action::MoveUp => self.move_up(),
             Action::MoveDown => self.move_down(),
             Action::EnterEditing => self.mode = Mode::SelectingDir,
             Action::QuitEditing => {
                 self.mode = Mode::Home;
-                self.key_input = env::var("HOME")
-                    .unwrap_or("".to_string())
-            },
-            Action::Save => self.mode = Mode::Downloading,
+                self.key_input = env::var("HOME").unwrap_or("".to_string())
+            }
+            Action::Save => self.mode = Mode::Home,
             _ => {}
         }
         Ok(None)
     }
 
-    fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>>  {
+    fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         let action = match self.mode {
-        Mode::Home => match key.code {
-            KeyCode::Char('q') => Action::Quit,
-            KeyCode::Enter => Action::EnterEditing,
-            KeyCode::Up | KeyCode::Char('k') => Action::MoveUp,
-            KeyCode::Down | KeyCode::Char('j') => Action::MoveDown,
-            _ => Action::Resume,
-        },
-        Mode::SelectingDir => match key.code {
-            KeyCode::Char(value) => {
-                self.key_input.push(value);
-                Action::Resume // Assuming Resume is the default action for Editing mode
-            }
-            KeyCode::Esc => Action::QuitEditing, // Example: Action to quit editing mode
-            KeyCode::Enter => Action::Save, // Example: Action to save changes
-            _ => Action::Resume,
-        },
-        Mode::Downloading => Action::SelectPlaylist,
-    };
-    Ok(Some(action))    }
+            Mode::Home => match key.code {
+                KeyCode::Char('q') => Action::Quit,
+                KeyCode::Enter => Action::EnterEditing,
+                KeyCode::Up | KeyCode::Char('k') => Action::MoveUp,
+                KeyCode::Down | KeyCode::Char('j') => Action::MoveDown,
+                _ => Action::Resume,
+            },
+            Mode::SelectingDir => match key.code {
+                KeyCode::Char(value) => {
+                    self.key_input.push(value);
+                    Action::Resume // Assuming Resume is the default action for Editing mode
+                }
+                KeyCode::Esc => Action::QuitEditing, // Example: Action to quit editing mode
+                KeyCode::Enter => Action::SelectPlaylist(
+                    self.key_input.clone(), self.playlist_index
+                    ),
+                _ => Action::Resume,
+            },
+        };
+        Ok(Some(action))
+    }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        
         let chunks = Layout::new(
             Direction::Horizontal,
             [Constraint::Percentage(50), Constraint::Percentage(50)],
         )
         .split(area);
 
-        let playlists: Vec<ListItem> = self.spotify.playlists
+        let playlists: Vec<ListItem> = self
+            .playlists
             .iter()
             .skip(self.offset)
             .enumerate()
@@ -222,12 +143,6 @@ impl Component for Home {
 
         f.render_widget(menu, chunks[0]);
 
-        let output = Paragraph::new(self.download_output.clone())
-        .style(Style::default().fg(Color::Black).bg(Color::White))
-        .block(Block::default().borders(Borders::ALL).title("Output"));
-
-        f.render_widget(output, chunks[1]);
-        
         if self.mode == Mode::SelectingDir {
             f.render_widget(Clear, f.size());
             let popup_block = Block::default()
@@ -242,7 +157,6 @@ impl Component for Home {
             let area = centered_rect(60, 25, f.size());
             f.render_widget(popup, f.size());
         }
-
 
         Ok(())
     }
@@ -269,4 +183,3 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1] // Return the middle chunk
 }
-
