@@ -129,7 +129,7 @@ impl Spotify {
 
     //// Download the selected playlist
     fn download_playlist(&mut self, url: String, dir: String) -> Result<()> {
-        self.download_output.push_str("Downloading playlist...");
+        self.download_output.push_str("Downloading playlist...\n");
         let stdout = Command::new("spotdl")
             .args([
                 "sync".to_string(),
