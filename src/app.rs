@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use crate::{
     action::Action,
-    components::{fps::FpsCounter, home::Home, spotify::Spotify, Component},
+    components::{fps::FpsCounter, home::Home, spotify::Spotify, download::Download, Component},
     config::Config,
     mode::Mode,
     tui,
@@ -29,11 +29,12 @@ impl App {
         let home = Home::new(spotify.playlists.clone());
         let fps = FpsCounter::default();
         let config = Config::new()?;
+        let download = Download::new();
         let mode = Mode::Home;
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(home), Box::new(fps), Box::new(spotify)],
+            components: vec![Box::new(home), Box::new(fps), Box::new(spotify), Box::new(download)],
             should_quit: false,
             should_suspend: false,
             config,

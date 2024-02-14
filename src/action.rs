@@ -21,6 +21,7 @@ pub enum Action {
 
     // Home Actions 
     SelectPlaylist(String, usize),
+    Downloading(String),
     MoveUp,
     MoveDown,
     EnterEditing,

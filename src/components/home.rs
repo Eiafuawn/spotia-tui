@@ -114,6 +114,7 @@ impl Component for Home {
                     ),
                 _ => Action::Resume,
             },
+            _ => Action::Resume,
         };
         Ok(Some(action))
     }

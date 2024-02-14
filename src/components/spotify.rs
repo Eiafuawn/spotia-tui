@@ -1,12 +1,13 @@
 use futures::TryStreamExt;
 use futures_util::pin_mut;
 use std::{
-    collections::HashMap, 
-    time::Duration,
-    fs, 
-    env,
+    collections::HashMap,
+    env, fs,
     io::{self, BufRead, BufReader, Write},
-    path::Path, process::{Command, Stdio}
+    path::Path,
+    process::{Command, Stdio},
+    time::Duration,
+    sync::{Arc, Mutex},
 };
 
 use color_eyre::eyre::Result;
@@ -24,7 +25,7 @@ use super::Component;
 use crate::{action::Action, tui::Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Spotify {
     spotify: AuthCodeSpotify,
     pub playlists: Vec<SimplifiedPlaylist>,
@@ -78,58 +79,69 @@ impl Spotify {
     }
 
     //// Get the playlists and launches the download/sync
-    fn select_playlist(&mut self, dir: String, idx: usize) -> Result<()>{
+    fn select_playlist(&mut self, dir: String, idx: usize) -> Result<()> {
         let url = self.get_playlist_url(idx);
-        let name = self.get_playlist_name(idx)
-            .replace(' ', "");
+        let name = self.get_playlist_name(idx).replace(' ', "");
         let path = dir.clone() + "/" + &name;
         let dir_path = Path::new(&path);
 
+        let download_output = Arc::new(Mutex::new(self.download_output.clone())); // Use Arc<Mutex<_>> to share across threads
+        let mut spotify_clone = self.clone();
+        let url_clone = url.clone();
+        let dir_path_clone = dir_path.to_owned();
+        let cmd_tx = self.command_tx.clone();
+
         if !dir_path.exists() {
             if let Err(err) = fs::create_dir_all(dir_path) {
-                self.download_output.push_str(&format!("Error creating directory: {}\n", err));
-                            
-            } else {
-                self.download_output.push_str(&format!("Directory {} created successfully!\n", dir));
-                self.download_playlist(url, dir)?;
+                    download_output.lock().unwrap().push_str(&format!("Error creating directory: {}\n", err));
+                } else {
+                download_output.lock().unwrap().push_str(&format!("Directory {} created successfully!\n", &dir));
+
+                // Spawn a blocking task to run download_playlist
+                tokio::spawn(async move {
+                    if let Err(err) = spotify_clone.download_playlist(url_clone, &dir_path_clone).await {
+                        download_output.lock().unwrap().push_str(&format!("Error downloading playlist: {}\n", err));
+                    }
+                });
             }
         } else {
-            self.download_output.push_str(&format!("Directory {} already exists!\n", dir));
-            self.sync_playlist(dir_path)?;
+            tokio::spawn(async move {
+                    if let Err(err) = spotify_clone.sync_playlist( &dir_path_clone).await {
+                        download_output.lock().unwrap().push_str(&format!("Error downloading playlist: {}\n", err));
+                    }
+                });
         }
 
-        Ok(())
+    Ok(())
     }
 
     //// Sync the selected playlist
-    fn sync_playlist(&mut self, dir: &Path) -> Result<()> {
+    async fn sync_playlist(&mut self, dir: &Path) -> Result<()> {
         self.download_output.push_str("Syncing playlist...\n");
         let stdout = Command::new("spotdl")
-                    .args(["sync".to_string(), "save.spotdl".to_string()])
-                    .current_dir(dir)
-                    .stdout(Stdio::piped())  // Redirect stdout to a pipe
-                    .spawn()?
-                    .stdout
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to execute command"))?;
+            .args(["sync".to_string(), "save.spotdl".to_string()])
+            .current_dir(dir)
+            .stdout(Stdio::piped()) // Redirect stdout to a pipe
+            .spawn()?
+            .stdout
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to execute command"))?;
 
         let reader = BufReader::new(stdout);
 
-        reader.lines()
-            .map_while(|line| line.ok())
-            .for_each(|line| {
-                self.download_output.push_str(&line);
-                self.download_output.push('\n');
-                if let Some(tx) = &self.command_tx {
-                    tx.send(Action::Downloading).unwrap();
-                }
-            });
+        reader.lines().map_while(|line| line.ok()).for_each(|line| {
+            // self.download_output.push_str(&line);
+            // self.download_output.push('\n');
+            if let Some(tx) = &self.command_tx {
+                tx.send(Action::Downloading(line)).unwrap();
+            }
+        });
 
         Ok(())
     }
 
     //// Download the selected playlist
-    fn download_playlist(&mut self, url: String, dir: String) -> Result<()> {
-        self.download_output.push_str("Downloading playlist...\n");
+    async fn download_playlist(&mut self, url: String, dir: &Path) -> Result<()> {
+        self.download_output.push_str("Downloading playlist...");
         let stdout = Command::new("spotdl")
             .args([
                 "sync".to_string(),
@@ -147,8 +159,11 @@ impl Spotify {
         let reader = BufReader::new(stdout);
 
         reader.lines().map_while(|line| line.ok()).for_each(|line| {
-            self.download_output.push_str(&line);
-            self.download_output.push('\n');
+            // self.download_output.push_str(&line);
+            // self.download_output.push('\n');
+            if let Some(tx) = &self.command_tx {
+                tx.send(Action::Downloading(line)).unwrap();
+            }
         });
 
         Ok(())
@@ -156,17 +171,21 @@ impl Spotify {
 }
 
 impl Component for Spotify {
+    fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
+        self.command_tx = Some(tx);
+        Ok(())
+    }
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         #[allow(clippy::single_match)]
         match action {
-            Action::SelectPlaylist(dir, idx) =>  self.select_playlist(dir, idx)?,
+            Action::SelectPlaylist(dir, idx) => self.select_playlist(dir, idx)?,
             _ => {}
         }
         Ok(None)
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let chunks = Layout::new(
+        /*let chunks = Layout::new(
             Direction::Horizontal,
             [Constraint::Percentage(50), Constraint::Percentage(50)],
         )
@@ -176,10 +195,10 @@ impl Component for Spotify {
             .block(Block::default().borders(Borders::ALL).title("Output"));
 
         f.render_widget(output, chunks[1]);
-
-        Ok(())
+*/
+        Ok(()) 
     }
-}
+} 
 
 async fn get_playlists(spotify: &AuthCodeSpotify) -> Vec<SimplifiedPlaylist> {
     let stream = spotify.current_user_playlists();
