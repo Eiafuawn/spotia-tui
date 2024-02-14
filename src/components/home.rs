@@ -140,7 +140,7 @@ impl Home {
 
 }
 
-    impl Component for Home {
+impl Component for Home {
     fn register_action_handler(&mut self, tx: UnboundedSender<Action>) -> Result<()> {
         self.command_tx = Some(tx);
         Ok(())
