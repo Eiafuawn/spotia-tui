@@ -87,14 +87,14 @@ impl Spotify {
 
         if !dir_path.exists() {
             if let Err(err) = fs::create_dir_all(dir_path) {
-                self.download_output.push_str(&format!("Error creating directory: {}", err));
+                self.download_output.push_str(&format!("Error creating directory: {}\n", err));
                             
             } else {
-                self.download_output.push_str(&format!("Directory {} created successfully!", dir));
+                self.download_output.push_str(&format!("Directory {} created successfully!\n", dir));
                 self.download_playlist(url, dir)?;
             }
         } else {
-            self.download_output.push_str(&format!("Directory {} already exists!", dir));
+            self.download_output.push_str(&format!("Directory {} already exists!\n", dir));
             self.sync_playlist(dir_path)?;
         }
 
@@ -103,7 +103,7 @@ impl Spotify {
 
     //// Sync the selected playlist
     fn sync_playlist(&mut self, dir: &Path) -> Result<()> {
-        self.download_output.push_str("Syncing playlist...");
+        self.download_output.push_str("Syncing playlist...\n");
         let stdout = Command::new("spotdl")
                     .args(["sync".to_string(), "save.spotdl".to_string()])
                     .current_dir(dir)
