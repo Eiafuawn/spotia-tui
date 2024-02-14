@@ -195,31 +195,12 @@ impl Component for Home {
     Ok(Some(action))    }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let main_layout = Layout::new(
-            Direction::Vertical,
-            [
-                Constraint::Length(1),
-                Constraint::Min(0),
-                Constraint::Length(1),
-            ],
-        )
-        .split(area);
-        f.render_widget(
-            Block::new()
-                .borders(Borders::TOP)
-                .title("Select a playlist to download"),
-            main_layout[0],
-        );
-        f.render_widget(
-            Block::new().borders(Borders::TOP).title("Status Bar"),
-            main_layout[2],
-        );
-
+        
         let chunks = Layout::new(
             Direction::Horizontal,
             [Constraint::Percentage(50), Constraint::Percentage(50)],
         )
-        .split(main_layout[1]);
+        .split(area);
 
         let playlists: Vec<ListItem> = self.spotify.playlists
             .iter()
@@ -259,7 +240,7 @@ impl Component for Home {
                 .block(popup_block);
 
             let area = centered_rect(60, 25, f.size());
-            f.render_widget(popup, area);
+            f.render_widget(popup, f.size());
         }
 
 

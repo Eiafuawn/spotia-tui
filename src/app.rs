@@ -1,6 +1,6 @@
 use color_eyre::eyre::Result;
 use crossterm::event::KeyEvent;
-use ratatui::prelude::Rect;
+use ratatui::{prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
@@ -112,7 +112,23 @@ impl App {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
+                                let main_layout = Layout::new(
+                                    Direction::Vertical,
+                                    [
+                                        Constraint::Length(1),
+                                        Constraint::Min(0),
+                                        Constraint::Length(1),
+                                    ],
+                                )
+                                .split(f.size());
+                                f.render_widget(
+                                    Block::new()
+                                        .borders(Borders::TOP)
+                                        .title("Select a playlist to download"),
+                                    main_layout[0],
+                                );
+
+                                let r = component.draw(f, main_layout[1]);
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
