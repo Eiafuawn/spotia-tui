@@ -82,7 +82,8 @@ impl Spotify {
         let url = self.get_playlist_url(idx);
         let name = self.get_playlist_name(idx)
             .replace(' ', "");
-        let dir_path = Path::new(&dir);
+        let path = dir.clone() + "/" + &name;
+        let dir_path = Path::new(&path);
 
         if !dir_path.exists() {
             if let Err(err) = fs::create_dir_all(dir_path) {
@@ -118,7 +119,9 @@ impl Spotify {
             .for_each(|line| {
                 self.download_output.push_str(&line);
                 self.download_output.push('\n');
-                            
+                if let Some(tx) = &self.command_tx {
+                    tx.send(Action::Downloading).unwrap();
+                }
             });
 
         Ok(())
