@@ -20,7 +20,6 @@ use crate::{
     app,
     config::{Config, KeyBindings},
     mode::Mode,
-    spotify::Spotify,
 };
 
 #[derive(Default)]
@@ -85,7 +84,7 @@ impl Component for Home {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
             }
-            Action::Save => self.mode = Mode::Home,
+            Action::SelectPlaylist(_, _) => self.mode = Mode::Home,
             _ => {}
         }
         Ok(None)
@@ -106,6 +105,10 @@ impl Component for Home {
                     Action::Resume // Assuming Resume is the default action for Editing mode
                 }
                 KeyCode::Esc => Action::QuitEditing, // Example: Action to quit editing mode
+                KeyCode::Backspace => {
+                    self.key_input.pop();
+                    Action::Resume
+                }
                 KeyCode::Enter => Action::SelectPlaylist(
                     self.key_input.clone(), self.playlist_index
                     ),
@@ -144,7 +147,7 @@ impl Component for Home {
         f.render_widget(menu, chunks[0]);
 
         if self.mode == Mode::SelectingDir {
-            f.render_widget(Clear, f.size());
+            f.render_widget(Clear, chunks[0]);
             let popup_block = Block::default()
                 .title("Choose your folder")
                 .borders(Borders::ALL)
@@ -154,8 +157,8 @@ impl Component for Home {
                 .style(Style::default().bg(Color::White).fg(Color::Black))
                 .block(popup_block);
 
-            let area = centered_rect(60, 25, f.size());
-            f.render_widget(popup, f.size());
+            let center = centered_rect(60, 25, chunks[0]);
+            f.render_widget(popup, center);
         }
 
         Ok(())

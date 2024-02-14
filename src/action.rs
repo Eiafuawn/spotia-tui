@@ -20,7 +20,7 @@ pub enum Action {
     Help,
 
     // Home Actions 
-    SelectPlaylist,
+    SelectPlaylist(String, usize),
     MoveUp,
     MoveDown,
     EnterEditing,

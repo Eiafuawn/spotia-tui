@@ -3,13 +3,13 @@ use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
+use std::rc::Rc;
 
 use crate::{
     action::Action,
-    components::{fps::FpsCounter, home::Home, Component},
+    components::{fps::FpsCounter, home::Home, spotify::Spotify, Component},
     config::Config,
     mode::Mode,
-    spotify::Spotify,
     tui,
 };
 
@@ -26,14 +26,14 @@ pub struct App {
 
 impl App {
     pub fn new(tick_rate: f64, frame_rate: f64, spotify: Spotify) -> Result<Self> {
-        let home = Home::new(spotify);
+        let home = Home::new(spotify.playlists.clone());
         let fps = FpsCounter::default();
         let config = Config::new()?;
         let mode = Mode::Home;
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(home), Box::new(fps)],
+            components: vec![Box::new(home), Box::new(fps), Box::new(spotify)],
             should_quit: false,
             should_suspend: false,
             config,
@@ -112,23 +112,14 @@ impl App {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let main_layout = Layout::new(
-                                    Direction::Vertical,
-                                    [
-                                        Constraint::Length(1),
-                                        Constraint::Min(0),
-                                        Constraint::Length(1),
-                                    ],
-                                )
-                                .split(f.size());
                                 f.render_widget(
                                     Block::new()
                                         .borders(Borders::TOP)
                                         .title("Select a playlist to download"),
-                                    main_layout[0],
+                                    main_layout(f.size())[0],
                                 );
 
-                                let r = component.draw(f, main_layout[1]);
+                                let r = component.draw(f, main_layout(f.size())[1]);
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
@@ -140,7 +131,10 @@ impl App {
                     Action::Render => {
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let r = component.draw(f, f.size());
+                                let r = component.draw(
+                                    f,
+                                    main_layout(f.size())[1]
+                                );
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
@@ -173,4 +167,16 @@ impl App {
         tui.exit()?;
         Ok(())
     }
+}
+
+fn main_layout(size: Rect) -> Rc<[Rect]> {
+    Layout::new(
+       Direction::Vertical,
+           [
+               Constraint::Length(1),
+               Constraint::Min(0),
+               Constraint::Length(1),
+           ],
+        )
+       .split(size)
 }

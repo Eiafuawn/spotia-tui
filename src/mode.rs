@@ -5,5 +5,4 @@ pub enum Mode {
   #[default]
   Home,
   SelectingDir,
-  Downloading,
 }

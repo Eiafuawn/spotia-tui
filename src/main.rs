@@ -8,14 +8,13 @@ pub mod cli;
 pub mod components;
 pub mod config;
 pub mod mode;
-pub mod spotify;
 pub mod tui;
 pub mod utils;
 
 use clap::Parser;
 use cli::Cli;
 use color_eyre::eyre::Result;
-use spotify::Spotify;
+use components::spotify::Spotify;
 
 use crate::{
     app::App,
