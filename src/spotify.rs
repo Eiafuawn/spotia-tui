@@ -1,57 +1,70 @@
 use futures::stream::TryStreamExt;
 use futures_util::pin_mut;
 use rspotify::{
-    model::{playlist::{ FullPlaylist, SimplifiedPlaylist },  Market, Country }, prelude::*, scopes, AuthCodeSpotify,
-    Config, Credentials, OAuth 
+    model::{
+        playlist::{FullPlaylist, PlaylistItem, SimplifiedPlaylist}, Country, FullTrack, Market, PlayableItem
+    },
+    prelude::*,
+    scopes, AuthCodeSpotify, Config, Credentials, OAuth,
 };
 
 use crate::app::App;
 
-
 #[derive(Debug, Default)]
 pub struct Spotify {
     spotify: AuthCodeSpotify,
+    pub playlists: Vec<SimplifiedPlaylist>,
 }
 
 impl Spotify {
     pub async fn new() -> Self {
-        let config = Config { ..Default::default() };
+        let config = Config {
+            ..Default::default()
+        };
 
         let creds = Credentials::from_env().unwrap();
-        let oauth = OAuth::from_env(scopes!("playlist-read-private playlist-read-collaborative")).unwrap();
+        let oauth =
+            OAuth::from_env(
+                scopes!("playlist-read-private playlist-read-collaborative")
+            ).unwrap();
 
         let spotify = AuthCodeSpotify::with_config(creds.clone(), oauth, config.clone());
         let url = spotify.get_authorize_url(false).unwrap();
-        spotify.prompt_for_token(&url) .await.unwrap();
-        
-       Self {
-           spotify
-       } 
+        spotify.prompt_for_token(&url).await.unwrap();
+        let playlists = get_playlists(spotify.clone()).await;
+
+        Self { spotify, playlists }
     }
 
-    pub async fn get_playlists(&self) -> Vec<SimplifiedPlaylist> {
-        let stream = self.spotify.current_user_playlists();
-        let mut playlists = vec![];
+    pub fn get_playlist_url(&self, idx: usize) -> String {
+        self.playlists[idx].id.url()
+    }
+
+    pub fn get_playlist_name(&self, idx: usize) -> String {
+        self.playlists[idx].name.clone()
+    }
+
+    pub async fn get_tracks(&self, idx: usize) -> Vec<FullTrack> {
+        let playlist = self.playlists[idx].id.clone();
+        let stream = self.spotify.playlist_items(playlist, None, None);
         pin_mut!(stream);
+        let mut tracks = vec![];
         while let Some(item) = stream.try_next().await.unwrap() {
-            playlists.push(item);
+            let track = item.track;
+            if let Some(PlayableItem::Track(track)) = track {
+                    tracks.push(track);
+            }
         }
-        playlists
+        tracks
     }
+}
 
-    pub fn get_playlist_url(&self, app: &App) -> String {
-        app.playlists[app.selected_playlist_index].id.url()
+async fn get_playlists(spotify: AuthCodeSpotify) -> Vec<SimplifiedPlaylist> {
+    let stream = spotify.current_user_playlists();
+    let mut playlists = vec![];
+    pin_mut!(stream);
+    while let Some(item) = stream.try_next().await.unwrap() {
+        playlists.push(item);
     }
-
-    pub fn get_playlist_name(&self, app: &App) -> String {
-        app.playlists[app.selected_playlist_index].name.clone()
-    }
-
-    pub async fn get_tracks(&self, app: &App) -> FullPlaylist {
-        let id = app.playlists[app.selected_playlist_index].id.clone();
-        self.spotify.playlist(
-            id,
-            None,
-            Some(Market::Country(Country::Switzerland))).await.unwrap()
-    }
+    playlists
 }
