@@ -18,7 +18,6 @@ pub struct App {
     pub tick_rate: f64,
     pub frame_rate: f64,
     pub components: Vec<Box<dyn Component>>,
-    pub spotify: Spotify,
     pub should_quit: bool,
     pub should_suspend: bool,
     pub mode: Mode,
@@ -27,7 +26,7 @@ pub struct App {
 
 impl App {
     pub fn new(tick_rate: f64, frame_rate: f64, spotify: Spotify) -> Result<Self> {
-        let home = Home::new(spotify.playlists.clone());
+        let home = Home::new(spotify);
         let fps = FpsCounter::default();
         let config = Config::new()?;
         let mode = Mode::Home;
@@ -35,7 +34,6 @@ impl App {
             tick_rate,
             frame_rate,
             components: vec![Box::new(home), Box::new(fps)],
-            spotify,
             should_quit: false,
             should_suspend: false,
             config,

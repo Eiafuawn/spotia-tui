@@ -2563,6 +2563,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "spotia"
+version = "0.1.0"
+dependencies = [
+ "better-panic",
+ "clap",
+ "color-eyre",
+ "config",
+ "crossterm",
+ "derive_deref",
+ "directories",
+ "futures",
+ "futures-util",
+ "human-panic",
+ "json5",
+ "lazy_static",
+ "libc",
+ "log",
+ "pretty_assertions",
+ "ratatui",
+ "rspotify",
+ "serde",
+ "serde_json",
+ "signal-hook",
+ "strip-ansi-escapes",
+ "strum 0.26.1",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-error",
+ "tracing-subscriber",
+ "vergen",
+]
+
+[[package]]
 name = "stability"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2706,40 +2740,6 @@ checksum = "21bebf2b7c9e0a515f6e0f8c51dc0f8e4696391e6f1ff30379559f8365fb0df7"
 dependencies = [
  "rustix",
  "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "test"
-version = "0.1.0"
-dependencies = [
- "better-panic",
- "clap",
- "color-eyre",
- "config",
- "crossterm",
- "derive_deref",
- "directories",
- "futures",
- "futures-util",
- "human-panic",
- "json5",
- "lazy_static",
- "libc",
- "log",
- "pretty_assertions",
- "ratatui",
- "rspotify",
- "serde",
- "serde_json",
- "signal-hook",
- "strip-ansi-escapes",
- "strum 0.26.1",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-error",
- "tracing-subscriber",
- "vergen",
 ]
 
 [[package]]
