@@ -79,7 +79,7 @@ impl Component for Home {
             Action::Tick => {}
             Action::MoveUp => self.move_up(),
             Action::MoveDown => self.move_down(),
-            Action::EnterEditing => self.mode = Mode::Downloader,
+            Action::EnterEditing => self.mode = Mode::Input,
             Action::QuitEditing => {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
@@ -92,7 +92,7 @@ impl Component for Home {
 
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         let action = match self.mode {
-            Mode::Downloader => match key.code {
+            Mode::Input => match key.code {
                 KeyCode::Char(value) => {
                     self.key_input.push(value);
                     Action::Resume
@@ -102,9 +102,9 @@ impl Component for Home {
                     self.key_input.pop();
                     Action::Resume
                 }
-                KeyCode::Enter => Action::SelectPlaylist(
-                    self.key_input.clone(), self.playlist_index
-                    ),
+                KeyCode::Enter => {
+                    Action::SelectPlaylist(self.key_input.clone(), self.playlist_index)
+                }
                 _ => Action::Resume,
             },
             _ => Action::Resume,
@@ -119,42 +119,44 @@ impl Component for Home {
         )
         .split(area);
 
-        let playlists: Vec<ListItem> = self
-            .playlists
-            .iter()
-            .skip(self.offset)
-            .enumerate()
-            .map(|(i, item)| {
-                let style = if i == self.playlist_index - self.offset {
-                    Style::default().bg(Color::Yellow).fg(Color::Black)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(item.name.clone()).style(style)
-            })
-            .collect();
+        match self.mode {
+            Mode::Downloader => {
+                let playlists: Vec<ListItem> = self
+                    .playlists
+                    .iter()
+                    .skip(self.offset)
+                    .enumerate()
+                    .map(|(i, item)| {
+                        let style = if i == self.playlist_index - self.offset {
+                            Style::default().bg(Color::Yellow).fg(Color::Black)
+                        } else {
+                            Style::default()
+                        };
+                        ListItem::new(item.name.clone()).style(style)
+                    })
+                    .collect();
+                let menu = List::new(playlists.clone())
+                    .block(Block::default().borders(Borders::ALL))
+                    .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
-        let menu = List::new(playlists.clone())
-            .block(Block::default().borders(Borders::ALL))
-            .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
+                f.render_widget(menu, chunks[0]);
+            }
+            Mode::Input => {
+                f.render_widget(Clear, area);
+                let popup_block = Block::default()
+                    .title("Choose your folder")
+                    .borders(Borders::ALL)
+                    .style(Style::default().bg(Color::Gray));
 
-        f.render_widget(menu, chunks[0]);
+                let popup = Paragraph::new(self.key_input.clone())
+                    .style(Style::default().bg(Color::White).fg(Color::Black))
+                    .block(popup_block);
 
-        if self.mode == Mode::Downloader {
-            f.render_widget(Clear, area);
-            let popup_block = Block::default()
-                .title("Choose your folder")
-                .borders(Borders::ALL)
-                .style(Style::default().bg(Color::Gray));
-
-            let popup = Paragraph::new(self.key_input.clone())
-                .style(Style::default().bg(Color::White).fg(Color::Black))
-                .block(popup_block);
-
-            let center = centered_rect(60, 25, area);
-            f.render_widget(popup, center);
+                let center = centered_rect(60, 25, area);
+                f.render_widget(popup, center);
+            }
+            _ => {}
         }
-
         Ok(())
     }
 }
