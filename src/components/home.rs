@@ -141,7 +141,7 @@ impl Component for Home {
         f.render_widget(menu, chunks[0]);
 
         if self.mode == Mode::SelectingDir {
-            f.render_widget(Clear, chunks[0]);
+            f.render_widget(Clear, area);
             let popup_block = Block::default()
                 .title("Choose your folder")
                 .borders(Borders::ALL)

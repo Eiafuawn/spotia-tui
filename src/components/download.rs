@@ -4,16 +4,18 @@ use color_eyre::eyre::Result;
 use ratatui::{prelude::*, widgets::*};
 
 use super::Component;
-use crate::{action::Action, tui::Frame};
+use crate::{action::Action, mode::Mode, tui::Frame};
 
 #[derive(Default)]
 pub struct Download {
+    mode: Mode,
     download_output: String,
 }
 
 impl Download {
     pub fn new() -> Self {
         Self {
+            mode: Mode::Idle,
             download_output: String::new(),
         }
     }
@@ -23,9 +25,11 @@ impl Component for Download {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         #[allow(clippy::single_match)]
         match action {
+            Action::EnterEditing => self.mode = Mode::SelectingDir,
+            Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
             Action::Downloading(output) => {
-            self.download_output.push_str(&output);
-            self.download_output.push('\n');
+                self.download_output.push_str(&output);
+                self.download_output.push('\n');
             }
             _ => {}
         }
@@ -38,11 +42,16 @@ impl Component for Download {
             [Constraint::Percentage(50), Constraint::Percentage(50)],
         )
         .split(rect);
-        let output = Paragraph::new(self.download_output.clone())
-            .style(Style::default().fg(Color::Black).bg(Color::White))
-            .block(Block::default().borders(Borders::ALL).title("Output"));
+        match self.mode {
+            Mode::Downloading => {
+                let output = Paragraph::new(self.download_output.clone())
+                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                    .block(Block::default().borders(Borders::ALL).title("Output"));
 
-        f.render_widget(output, chunks[1]);
+                f.render_widget(output, chunks[1]);
+            }
+            _ => f.render_widget(Clear, chunks[1]),
+        }
 
         Ok(())
     }

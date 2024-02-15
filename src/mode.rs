@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 pub enum Mode {
     #[default]
     Home,
-    Downloading,
     SelectingDir,
+
+    // Outputs
+    Idle,
+    Downloading,
 }
