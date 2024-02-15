@@ -102,9 +102,9 @@ impl Component for Home {
             Mode::SelectingDir => match key.code {
                 KeyCode::Char(value) => {
                     self.key_input.push(value);
-                    Action::Resume // Assuming Resume is the default action for Editing mode
+                    Action::Resume
                 }
-                KeyCode::Esc => Action::QuitEditing, // Example: Action to quit editing mode
+                KeyCode::Esc => Action::QuitEditing,
                 KeyCode::Backspace => {
                     self.key_input.pop();
                     Action::Resume
