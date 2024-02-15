@@ -24,7 +24,7 @@ impl Download {
 impl Component for Download {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         match action {
-            Action::EnterEditing => self.mode = Mode::SelectingDir,
+            Action::EnterEditing => self.mode = Mode::Downloader,
             Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
             Action::Downloading(output) => {
                 self.download_output.push_str(&output);

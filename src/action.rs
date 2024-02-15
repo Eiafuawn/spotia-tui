@@ -20,11 +20,12 @@ pub enum Action {
     Help,
 
     // Home Actions 
-    SelectPlaylist(String, usize),
-    Downloading(String),
     MoveUp,
     MoveDown,
     EnterEditing,
     QuitEditing,
     Save,
+    // Download Actions
+    SelectPlaylist(String, usize),
+    Downloading(String),
 }

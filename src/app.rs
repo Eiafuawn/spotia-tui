@@ -2,12 +2,15 @@ use color_eyre::eyre::Result;
 use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
 use std::rc::Rc;
+use tokio::sync::mpsc;
 
 use crate::{
     action::Action,
-    components::{fps::FpsCounter, home::Home, spotify::Spotify, download::Download, Component},
+    components::{
+        download::Download, fps::FpsCounter, home::Home, manager::Manager, spotify::Spotify,
+        Component,
+    },
     config::Config,
     mode::Mode,
     tui,
@@ -28,6 +31,7 @@ pub struct App {
 impl App {
     pub fn new(tick_rate: f64, frame_rate: f64, spotify: Spotify) -> Result<Self> {
         let home = Home::new(spotify.playlists.clone());
+        let manager = Manager::new();
         let fps = FpsCounter::default();
         let config = Config::new()?;
         let download = Download::new();
@@ -35,7 +39,12 @@ impl App {
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![Box::new(home), Box::new(fps), Box::new(spotify), Box::new(download)],
+            components: vec![
+                Box::new(home),
+                Box::new(fps),
+                Box::new(spotify),
+                Box::new(download),
+            ],
             manager: vec![Box::new(home), Box::new(manager), Box::new(download)],
             should_quit: false,
             should_suspend: false,
@@ -134,10 +143,7 @@ impl App {
                     Action::Render => {
                         tui.draw(|f| {
                             for component in self.components.iter_mut() {
-                                let r = component.draw(
-                                    f,
-                                    main_layout(f.size())[1]
-                                );
+                                let r = component.draw(f, main_layout(f.size())[1]);
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
@@ -174,12 +180,12 @@ impl App {
 
 fn main_layout(size: Rect) -> Rc<[Rect]> {
     Layout::new(
-       Direction::Vertical,
-           [
-               Constraint::Length(1),
-               Constraint::Min(0),
-               Constraint::Length(1),
-           ],
-        )
-       .split(size)
+        Direction::Vertical,
+        [
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ],
+    )
+    .split(size)
 }

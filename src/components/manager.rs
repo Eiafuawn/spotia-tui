@@ -7,7 +7,7 @@ use super::Component;
 use crate::{action::Action, tui::Frame};
 
 #[derive(Debug, Clone)]
-struct Manager {}
+pub struct Manager {}
 
 impl Manager {
     pub fn new() -> Self {

@@ -79,7 +79,7 @@ impl Component for Home {
             Action::Tick => {}
             Action::MoveUp => self.move_up(),
             Action::MoveDown => self.move_down(),
-            Action::EnterEditing => self.mode = Mode::SelectingDir,
+            Action::EnterEditing => self.mode = Mode::Downloader,
             Action::QuitEditing => {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
@@ -92,7 +92,7 @@ impl Component for Home {
 
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         let action = match self.mode {
-            Mode::SelectingDir => match key.code {
+            Mode::Downloader => match key.code {
                 KeyCode::Char(value) => {
                     self.key_input.push(value);
                     Action::Resume
@@ -140,7 +140,7 @@ impl Component for Home {
 
         f.render_widget(menu, chunks[0]);
 
-        if self.mode == Mode::SelectingDir {
+        if self.mode == Mode::Downloader {
             f.render_widget(Clear, area);
             let popup_block = Block::default()
                 .title("Choose your folder")
