@@ -92,13 +92,6 @@ impl Component for Home {
 
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         let action = match self.mode {
-            Mode::Home => match key.code {
-                KeyCode::Char('q') => Action::Quit,
-                KeyCode::Enter => Action::EnterEditing,
-                KeyCode::Up | KeyCode::Char('k') => Action::MoveUp,
-                KeyCode::Down | KeyCode::Char('j') => Action::MoveDown,
-                _ => Action::Resume,
-            },
             Mode::SelectingDir => match key.code {
                 KeyCode::Char(value) => {
                     self.key_input.push(value);
