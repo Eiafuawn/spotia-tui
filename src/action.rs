@@ -26,6 +26,8 @@ pub enum Action {
     QuitEditing,
     Save,
     // Download Actions
+    EnterDownloader,
     SelectPlaylist(String, usize),
     Downloading(String),
+    DownloadFinished,
 }

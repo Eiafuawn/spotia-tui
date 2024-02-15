@@ -21,7 +21,7 @@ pub struct App {
     pub tick_rate: f64,
     pub frame_rate: f64,
     pub components: Vec<Box<dyn Component>>,
-    pub manager: Vec<Box<dyn Component>>,
+    pub displays: Vec<Box<dyn Component>>,
     pub should_quit: bool,
     pub should_suspend: bool,
     pub mode: Mode,
@@ -39,13 +39,8 @@ impl App {
         Ok(Self {
             tick_rate,
             frame_rate,
-            components: vec![
-                Box::new(home),
-                Box::new(fps),
-                Box::new(spotify),
-                Box::new(download),
-            ],
-            manager: vec![Box::new(home), Box::new(manager), Box::new(download)],
+            components: vec![Box::new(home), Box::new(fps), Box::new(download)],
+            displays: vec![Box::new(manager), Box::new(spotify)],
             should_quit: false,
             should_suspend: false,
             config,
@@ -73,6 +68,18 @@ impl App {
 
         for component in self.components.iter_mut() {
             component.init(tui.size()?)?;
+        }
+
+        for display in self.displays.iter_mut() {
+            display.register_action_handler(action_tx.clone())?;
+        }
+
+        for display in self.displays.iter_mut() {
+            display.register_config_handler(self.config.clone())?;
+        }
+
+        for display in self.displays.iter_mut() {
+            display.init(tui.size()?)?;
         }
 
         loop {
@@ -107,6 +114,19 @@ impl App {
                         action_tx.send(action)?;
                     }
                 }
+                match self.mode {
+                    Mode::Manager => {
+                        if let Some(action) = self.displays[0].handle_events(Some(e.clone()))? {
+                            action_tx.send(action)?;
+                        }
+                    }
+                    Mode::Downloader => {
+                        if let Some(action) = self.displays[1].handle_events(Some(e.clone()))? {
+                            action_tx.send(action)?;
+                        }
+                    }
+                    _ => {}
+                }
             }
 
             while let Ok(action) = action_rx.try_recv() {
@@ -117,20 +137,23 @@ impl App {
                     Action::Tick => {
                         self.last_tick_key_events.drain(..);
                     }
+                    Action::SelectPlaylist(_, _) => self.mode = Mode::Downloader,
+                    Action::DownloadFinished => self.mode = Mode::Home,
+                    Action::EnterEditing => self.mode = Mode::Input,
+                    Action::EnterDownloader => self.mode = Mode::Downloader,
                     Action::Quit => self.should_quit = true,
                     Action::Suspend => self.should_suspend = true,
                     Action::Resume => self.should_suspend = false,
                     Action::Resize(w, h) => {
                         tui.resize(Rect::new(0, 0, w, h))?;
                         tui.draw(|f| {
+                            f.render_widget(
+                                Block::new()
+                                    .borders(Borders::TOP)
+                                    .title("Select a playlist to download"),
+                                main_layout(f.size())[0],
+                            );
                             for component in self.components.iter_mut() {
-                                f.render_widget(
-                                    Block::new()
-                                        .borders(Borders::TOP)
-                                        .title("Select a playlist to download"),
-                                    main_layout(f.size())[0],
-                                );
-
                                 let r = component.draw(f, main_layout(f.size())[1]);
                                 if let Err(e) = r {
                                     action_tx
@@ -138,12 +161,40 @@ impl App {
                                         .unwrap();
                                 }
                             }
+                            let r = match self.mode {
+                                Mode::Manager => {
+                                        self.displays[0].draw(f, main_layout(f.size())[1])
+                                }
+                                Mode::Downloader => {
+                                        self.displays[1].draw(f, main_layout(f.size())[1])
+                                }
+                                _ => Ok(())
+                            };
+                            if let Err(e) = r {
+                                action_tx
+                                    .send(Action::Error(format!("Failed to draw: {:?}", e)))
+                                    .unwrap();
+                            }
                         })?;
                     }
                     Action::Render => {
                         tui.draw(|f| {
+                            f.render_widget(
+                                Block::new()
+                                    .borders(Borders::TOP)
+                                    .title("Select a playlist to download"),
+                                main_layout(f.size())[0],
+                            );
                             for component in self.components.iter_mut() {
                                 let r = component.draw(f, main_layout(f.size())[1]);
+                                if let Err(e) = r {
+                                    action_tx
+                                        .send(Action::Error(format!("Failed to draw: {:?}", e)))
+                                        .unwrap();
+                                }
+                            }
+                            for display in self.displays.iter_mut() {
+                                let r = display.draw(f, main_layout(f.size())[1]);
                                 if let Err(e) = r {
                                     action_tx
                                         .send(Action::Error(format!("Failed to draw: {:?}", e)))
@@ -156,6 +207,11 @@ impl App {
                 }
                 for component in self.components.iter_mut() {
                     if let Some(action) = component.update(action.clone())? {
+                        action_tx.send(action)?
+                    };
+                }
+                for display in self.displays.iter_mut() {
+                    if let Some(action) = display.update(action.clone())? {
                         action_tx.send(action)?
                     };
                 }

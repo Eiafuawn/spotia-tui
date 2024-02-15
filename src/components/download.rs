@@ -25,6 +25,7 @@ impl Component for Download {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         match action {
             Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
+            Action::DownloadFinished => self.mode = Mode::Idle,
             Action::Downloading(output) => {
                 self.download_output.push_str(&output);
                 self.download_output.push('\n');

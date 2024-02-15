@@ -25,9 +25,11 @@ use crate::{
 #[derive(Default)]
 pub struct Home {
     mode: Mode,
-    playlist_index: usize,
+    index: usize,
     offset: usize,
     playlists: Vec<SimplifiedPlaylist>,
+    menus: Vec<String>,
+    display_list_len: usize,
     key_input: String,
     command_tx: Option<UnboundedSender<Action>>,
     config: Config,
@@ -35,17 +37,26 @@ pub struct Home {
 
 impl Home {
     pub fn new(playlists: Vec<SimplifiedPlaylist>) -> Self {
+        let menus = vec![
+            "Download Playlist".to_string(),
+            "Manage Downloads".to_string(),
+            "Settings".to_string(),
+            "Quit".to_string(),
+        ];
+        let display_list_len = menus.len();
         Self {
             mode: Mode::Home,
+            menus,
             playlists,
+            display_list_len,
             key_input: env::var("HOME").unwrap_or("".to_string()),
             ..Default::default()
         }
     }
     /// Moves the selection cursor up.
     pub fn move_up(&mut self) {
-        if self.playlist_index > 0 {
-            self.playlist_index -= 1;
+        if self.index > 0 {
+            self.index -= 1;
             if self.offset > 0 {
                 self.offset -= 1;
             }
@@ -54,12 +65,17 @@ impl Home {
 
     /// Moves the selection cursor down.
     pub fn move_down(&mut self) {
-        if self.playlist_index < self.playlists.len() - 1 {
-            self.playlist_index += 1;
-            if self.playlist_index - self.offset > 5 {
+        if self.index < self.display_list_len - 1 {
+            self.index += 1;
+            if self.index - self.offset > 5 {
                 self.offset += 1;
             }
         }
+    }
+
+    pub fn enter_downloader(&mut self) {
+        self.mode = Mode::Downloader;
+        self.display_list_len = self.playlists.len();
     }
 }
 
@@ -80,11 +96,13 @@ impl Component for Home {
             Action::MoveUp => self.move_up(),
             Action::MoveDown => self.move_down(),
             Action::EnterEditing => self.mode = Mode::Input,
+            Action::EnterDownloader => self.enter_downloader(),
+            Action::DownloadFinished => self.mode = Mode::Home,
             Action::QuitEditing => {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
             }
-            Action::SelectPlaylist(_, _) => self.mode = Mode::Home,
+            Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
             _ => {}
         }
         Ok(None)
@@ -102,9 +120,19 @@ impl Component for Home {
                     self.key_input.pop();
                     Action::Resume
                 }
-                KeyCode::Enter => {
-                    Action::SelectPlaylist(self.key_input.clone(), self.playlist_index)
-                }
+                KeyCode::Enter => Action::SelectPlaylist(self.key_input.clone(), self.index),
+                _ => Action::Resume,
+            },
+            Mode::Home => match key.code {
+                KeyCode::Up => Action::MoveUp,
+                KeyCode::Down => Action::MoveDown,
+                KeyCode::Enter => match self.index {
+                    0 => Action::EnterDownloader,
+                    1 => Action::Resume,
+                    2 => Action::Resume,
+                    3 => Action::Quit,
+                    _ => Action::Resume,
+                },
                 _ => Action::Resume,
             },
             _ => Action::Resume,
@@ -127,7 +155,7 @@ impl Component for Home {
                     .skip(self.offset)
                     .enumerate()
                     .map(|(i, item)| {
-                        let style = if i == self.playlist_index - self.offset {
+                        let style = if i == self.index - self.offset {
                             Style::default().bg(Color::Yellow).fg(Color::Black)
                         } else {
                             Style::default()
@@ -135,12 +163,13 @@ impl Component for Home {
                         ListItem::new(item.name.clone()).style(style)
                     })
                     .collect();
-                let menu = List::new(playlists.clone())
+                let playlist_menu = List::new(playlists.clone())
                     .block(Block::default().borders(Borders::ALL))
                     .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
-                f.render_widget(menu, chunks[0]);
+                f.render_widget(playlist_menu, chunks[0]);
             }
+            Mode::Manager => {}
             Mode::Input => {
                 f.render_widget(Clear, area);
                 let popup_block = Block::default()
@@ -154,6 +183,27 @@ impl Component for Home {
 
                 let center = centered_rect(60, 25, area);
                 f.render_widget(popup, center);
+            }
+            Mode::Home => {
+                let menus: Vec<ListItem> = self
+                    .menus
+                    .iter()
+                    .skip(self.offset)
+                    .enumerate()
+                    .map(|(i, item)| {
+                        let style = if i == self.index - self.offset {
+                            Style::default().bg(Color::Yellow).fg(Color::Black)
+                        } else {
+                            Style::default()
+                        };
+                        ListItem::new(item.clone()).style(style)
+                    })
+                    .collect();
+                let menu = List::new(menus.clone())
+                    .block(Block::default().borders(Borders::ALL))
+                    .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
+
+                f.render_widget(menu, area)
             }
             _ => {}
         }

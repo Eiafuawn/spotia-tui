@@ -1,3 +1,4 @@
+use crossterm::style::Stylize;
 use futures::TryStreamExt;
 use futures_util::pin_mut;
 use std::{
@@ -117,7 +118,7 @@ impl Spotify {
 
     //// Sync the selected playlist
     async fn sync_playlist(&mut self, dir: &Path) -> Result<()> {
-        self.download_output.push_str("Syncing playlist...\n");
+        self.send_output("Syncing playlist...".to_string());
         let stdout = Command::new("spotdl")
             .args(["sync".to_string(), "save.spotdl".to_string()])
             .current_dir(dir)
@@ -129,19 +130,21 @@ impl Spotify {
         let reader = BufReader::new(stdout);
 
         reader.lines().map_while(|line| line.ok()).for_each(|line| {
-            // self.download_output.push_str(&line);
-            // self.download_output.push('\n');
-            if let Some(tx) = &self.command_tx {
-                tx.send(Action::Downloading(line)).unwrap();
-            }
+            self.send_output(line)
         });
+        
+        self.send_output("Syncing finished!".to_string());
+
+        if let Some(tx) = &self.command_tx {
+            tx.send(Action::DownloadFinished).unwrap();
+        }
 
         Ok(())
     }
 
     //// Download the selected playlist
     async fn download_playlist(&mut self, url: String, dir: &Path) -> Result<()> {
-        self.download_output.push_str("Downloading playlist...");
+        self.send_output("Download started...".to_string());
         let stdout = Command::new("spotdl")
             .args([
                 "sync".to_string(),
@@ -159,14 +162,22 @@ impl Spotify {
         let reader = BufReader::new(stdout);
 
         reader.lines().map_while(|line| line.ok()).for_each(|line| {
-            // self.download_output.push_str(&line);
-            // self.download_output.push('\n');
-            if let Some(tx) = &self.command_tx {
-                tx.send(Action::Downloading(line)).unwrap();
-            }
+            self.send_output(line)
         });
+        self.send_output("Download finished!".to_string());
+
+        if let Some(tx) = &self.command_tx {
+            tx.send(Action::DownloadFinished).unwrap();
+        }
+    
 
         Ok(())
+    }
+
+    fn send_output(&mut self, out: String) {
+        if let Some(tx) = &self.command_tx {
+             tx.send(Action::Downloading(out)).unwrap();
+        }
     }
 }
 
@@ -185,17 +196,6 @@ impl Component for Spotify {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        /*let chunks = Layout::new(
-            Direction::Horizontal,
-            [Constraint::Percentage(50), Constraint::Percentage(50)],
-        )
-        .split(area);
-        let output = Paragraph::new(self.download_output.clone())
-            .style(Style::default().fg(Color::Black).bg(Color::White))
-            .block(Block::default().borders(Borders::ALL).title("Output"));
-
-        f.render_widget(output, chunks[1]);
-*/
         Ok(()) 
     }
 } 

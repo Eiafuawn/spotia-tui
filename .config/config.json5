@@ -7,9 +7,12 @@
       "<Ctrl-z>": "Suspend",
       "<j>": "MoveDown",
       "<k>": "MoveUp",
-      "<enter>": "EnterEditing"
+      "<enter>": "EnterDownloader",
     },
-    "SelectingDir": {
+    "Downloader": {
+      "<j>": "MoveDown",
+      "<k>": "MoveUp",
+      "<enter>": "EnterEditing",
       "<Ctrl-z>": "Suspend",
     },
   }
