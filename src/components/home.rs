@@ -151,7 +151,7 @@ impl Component for Home {
                 .style(Style::default().bg(Color::White).fg(Color::Black))
                 .block(popup_block);
 
-            let center = centered_rect(60, 25, chunks[0]);
+            let center = centered_rect(60, 25, area);
             f.render_widget(popup, center);
         }
 

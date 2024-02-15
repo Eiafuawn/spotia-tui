@@ -23,7 +23,6 @@ impl Download {
 
 impl Component for Download {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
-        #[allow(clippy::single_match)]
         match action {
             Action::EnterEditing => self.mode = Mode::SelectingDir,
             Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
@@ -36,6 +35,7 @@ impl Component for Download {
         Ok(None)
     }
 
+    #[allow(clippy::single_match)]
     fn draw(&mut self, f: &mut Frame<'_>, rect: Rect) -> Result<()> {
         let chunks = Layout::new(
             Direction::Horizontal,
@@ -50,7 +50,7 @@ impl Component for Download {
 
                 f.render_widget(output, chunks[1]);
             }
-            _ => f.render_widget(Clear, chunks[1]),
+            _ => {},
         }
 
         Ok(())
