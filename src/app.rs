@@ -162,13 +162,11 @@ impl App {
                                 }
                             }
                             let r = match self.mode {
-                                Mode::Manager => {
-                                        self.displays[0].draw(f, main_layout(f.size())[1])
-                                }
+                                Mode::Manager => self.displays[0].draw(f, main_layout(f.size())[1]),
                                 Mode::Downloader => {
-                                        self.displays[1].draw(f, main_layout(f.size())[1])
+                                    self.displays[1].draw(f, main_layout(f.size())[1])
                                 }
-                                _ => Ok(())
+                                _ => Ok(()),
                             };
                             if let Err(e) = r {
                                 action_tx

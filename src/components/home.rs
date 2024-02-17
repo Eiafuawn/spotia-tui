@@ -128,7 +128,7 @@ impl Component for Home {
                 KeyCode::Down => Action::MoveDown,
                 KeyCode::Enter => match self.index {
                     0 => Action::EnterDownloader,
-                    1 => Action::Resume,
+                    1 => Action::EnterEditing,
                     2 => Action::Resume,
                     3 => Action::Quit,
                     _ => Action::Resume,

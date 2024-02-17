@@ -7,8 +7,8 @@ use std::{
     io::{self, BufRead, BufReader, Write},
     path::Path,
     process::{Command, Stdio},
-    time::Duration,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use color_eyre::eyre::Result;
@@ -94,26 +94,41 @@ impl Spotify {
 
         if !dir_path.exists() {
             if let Err(err) = fs::create_dir_all(dir_path) {
-                    download_output.lock().unwrap().push_str(&format!("Error creating directory: {}\n", err));
-                } else {
-                download_output.lock().unwrap().push_str(&format!("Directory {} created successfully!\n", &dir));
+                download_output
+                    .lock()
+                    .unwrap()
+                    .push_str(&format!("Error creating directory: {}\n", err));
+            } else {
+                download_output
+                    .lock()
+                    .unwrap()
+                    .push_str(&format!("Directory {} created successfully!\n", &dir));
 
                 // Spawn a blocking task to run download_playlist
                 tokio::spawn(async move {
-                    if let Err(err) = spotify_clone.download_playlist(url_clone, &dir_path_clone).await {
-                        download_output.lock().unwrap().push_str(&format!("Error downloading playlist: {}\n", err));
+                    if let Err(err) = spotify_clone
+                        .download_playlist(url_clone, &dir_path_clone)
+                        .await
+                    {
+                        download_output
+                            .lock()
+                            .unwrap()
+                            .push_str(&format!("Error downloading playlist: {}\n", err));
                     }
                 });
             }
         } else {
             tokio::spawn(async move {
-                    if let Err(err) = spotify_clone.sync_playlist( &dir_path_clone).await {
-                        download_output.lock().unwrap().push_str(&format!("Error downloading playlist: {}\n", err));
-                    }
-                });
+                if let Err(err) = spotify_clone.sync_playlist(&dir_path_clone).await {
+                    download_output
+                        .lock()
+                        .unwrap()
+                        .push_str(&format!("Error downloading playlist: {}\n", err));
+                }
+            });
         }
 
-    Ok(())
+        Ok(())
     }
 
     //// Sync the selected playlist
@@ -129,10 +144,11 @@ impl Spotify {
 
         let reader = BufReader::new(stdout);
 
-        reader.lines().map_while(|line| line.ok()).for_each(|line| {
-            self.send_output(line)
-        });
-        
+        reader
+            .lines()
+            .map_while(|line| line.ok())
+            .for_each(|line| self.send_output(line));
+
         self.send_output("Syncing finished!".to_string());
 
         if let Some(tx) = &self.command_tx {
@@ -161,22 +177,22 @@ impl Spotify {
 
         let reader = BufReader::new(stdout);
 
-        reader.lines().map_while(|line| line.ok()).for_each(|line| {
-            self.send_output(line)
-        });
+        reader
+            .lines()
+            .map_while(|line| line.ok())
+            .for_each(|line| self.send_output(line));
         self.send_output("Download finished!".to_string());
 
         if let Some(tx) = &self.command_tx {
             tx.send(Action::DownloadFinished).unwrap();
         }
-    
 
         Ok(())
     }
 
     fn send_output(&mut self, out: String) {
         if let Some(tx) = &self.command_tx {
-             tx.send(Action::Downloading(out)).unwrap();
+            tx.send(Action::Downloading(out)).unwrap();
         }
     }
 }
@@ -196,9 +212,9 @@ impl Component for Spotify {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        Ok(()) 
+        Ok(())
     }
-} 
+}
 
 async fn get_playlists(spotify: &AuthCodeSpotify) -> Vec<SimplifiedPlaylist> {
     let stream = spotify.current_user_playlists();

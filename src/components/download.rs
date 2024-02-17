@@ -50,7 +50,7 @@ impl Component for Download {
 
                 f.render_widget(output, chunks[1]);
             }
-            _ => {},
+            _ => {}
         }
 
         Ok(())

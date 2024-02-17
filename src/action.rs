@@ -19,7 +19,7 @@ pub enum Action {
     Error(String),
     Help,
 
-    // Home Actions 
+    // Home Actions
     MoveUp,
     MoveDown,
     EnterEditing,
@@ -30,4 +30,7 @@ pub enum Action {
     SelectPlaylist(String, usize),
     Downloading(String),
     DownloadFinished,
+    // Manage Actions
+    EnterManager,
+    SelectFolder(String),
 }
