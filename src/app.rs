@@ -35,7 +35,7 @@ impl App {
         let fps = FpsCounter::default();
         let config = Config::new()?;
         let download = Download::new();
-        let mode = Mode::Home;
+        let mode = Mode::Input;
         Ok(Self {
             tick_rate,
             frame_rate,
@@ -137,10 +137,11 @@ impl App {
                     Action::Tick => {
                         self.last_tick_key_events.drain(..);
                     }
-                    Action::SelectPlaylist(_, _) => self.mode = Mode::Downloader,
+                    Action::SelectFolder(_) => self.mode = Mode::Home,
                     Action::DownloadFinished => self.mode = Mode::Home,
                     Action::EnterEditing => self.mode = Mode::Input,
                     Action::EnterDownloader => self.mode = Mode::Downloader,
+                    Action::EnterManager => self.mode = Mode::Manager,
                     Action::Quit => self.should_quit = true,
                     Action::Suspend => self.should_suspend = true,
                     Action::Resume => self.should_suspend = false,

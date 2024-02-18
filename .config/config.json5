@@ -7,12 +7,17 @@
       "<Ctrl-z>": "Suspend",
       "<j>": "MoveDown",
       "<k>": "MoveUp",
-      "<enter>": "EnterDownloader",
     },
     "Downloader": {
+      "<q>": "Quit",
       "<j>": "MoveDown",
       "<k>": "MoveUp",
-      "<enter>": "EnterEditing",
+      "<Ctrl-z>": "Suspend",
+    },
+    "Manager": {
+      "<q>": "Quit",
+      "<j>": "MoveDown",
+      "<k>": "MoveUp",
       "<Ctrl-z>": "Suspend",
     },
   }

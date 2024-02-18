@@ -30,6 +30,7 @@ use tokio::sync::mpsc::UnboundedSender;
 pub struct Spotify {
     spotify: AuthCodeSpotify,
     pub playlists: Vec<SimplifiedPlaylist>,
+    dir: String,
     command_tx: Option<UnboundedSender<Action>>,
     download_output: String,
     config: Config,
@@ -80,10 +81,10 @@ impl Spotify {
     }
 
     //// Get the playlists and launches the download/sync
-    fn select_playlist(&mut self, dir: String, idx: usize) -> Result<()> {
+    fn select_playlist(&mut self, idx: usize) -> Result<()> {
         let url = self.get_playlist_url(idx);
         let name = self.get_playlist_name(idx).replace(' ', "");
-        let path = dir.clone() + "/" + &name;
+        let path = self.dir.clone() + "/" + &name;
         let dir_path = Path::new(&path);
 
         let download_output = Arc::new(Mutex::new(self.download_output.clone())); // Use Arc<Mutex<_>> to share across threads
@@ -102,7 +103,7 @@ impl Spotify {
                 download_output
                     .lock()
                     .unwrap()
-                    .push_str(&format!("Directory {} created successfully!\n", &dir));
+                    .push_str(&format!("Directory {} created successfully!\n", self.dir));
 
                 // Spawn a blocking task to run download_playlist
                 tokio::spawn(async move {
@@ -184,6 +185,7 @@ impl Spotify {
         self.send_output("Download finished!".to_string());
 
         if let Some(tx) = &self.command_tx {
+            println!("Sending DownloadFinished");
             tx.send(Action::DownloadFinished).unwrap();
         }
 
@@ -205,7 +207,8 @@ impl Component for Spotify {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         #[allow(clippy::single_match)]
         match action {
-            Action::SelectPlaylist(dir, idx) => self.select_playlist(dir, idx)?,
+            Action::SelectPlaylist(idx) => self.select_playlist(idx)?,
+            Action::SelectFolder(dir) => self.dir = dir,
             _ => {}
         }
         Ok(None)

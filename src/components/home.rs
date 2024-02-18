@@ -27,8 +27,10 @@ pub struct Home {
     mode: Mode,
     index: usize,
     offset: usize,
+    dir: String,
     playlists: Vec<SimplifiedPlaylist>,
     menus: Vec<String>,
+    dirs: Vec<String>,
     display_list_len: usize,
     key_input: String,
     command_tx: Option<UnboundedSender<Action>>,
@@ -45,7 +47,7 @@ impl Home {
         ];
         let display_list_len = menus.len();
         Self {
-            mode: Mode::Home,
+            mode: Mode::Input,
             menus,
             playlists,
             display_list_len,
@@ -74,8 +76,25 @@ impl Home {
     }
 
     pub fn enter_downloader(&mut self) {
+        self.index = 0;
+        self.offset = 0;
         self.mode = Mode::Downloader;
         self.display_list_len = self.playlists.len();
+    }
+
+    fn enter_manager(&mut self, dirs: Vec<String>) {
+        self.index = 0;
+        self.offset = 0;
+        self.dirs = dirs;
+        self.mode = Mode::Manager;
+        self.display_list_len = self.dirs.len();
+    }
+
+    fn enter_home(&mut self) {
+        self.mode = Mode::Home;
+        self.index = 0;
+        self.offset = 0;
+        self.display_list_len = self.menus.len();
     }
 }
 
@@ -97,12 +116,17 @@ impl Component for Home {
             Action::MoveDown => self.move_down(),
             Action::EnterEditing => self.mode = Mode::Input,
             Action::EnterDownloader => self.enter_downloader(),
-            Action::DownloadFinished => self.mode = Mode::Home,
+            Action::SelectFolder(_) => self.mode = Mode::Home,
+            Action::EnterManager => self.mode = Mode::Manager,
+            Action::GetDirs(dirs) => self.enter_manager(dirs),
+            Action::DownloadFinished => self.enter_home(),
             Action::QuitEditing => {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
             }
-            Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
+            Action::SelectPlaylist(_) | Action::SelectActivePlaylist(_) => {
+                self.mode = Mode::Downloading
+            }
             _ => {}
         }
         Ok(None)
@@ -120,7 +144,10 @@ impl Component for Home {
                     self.key_input.pop();
                     Action::Resume
                 }
-                KeyCode::Enter => Action::SelectPlaylist(self.key_input.clone(), self.index),
+                KeyCode::Enter => {
+                    self.mode = Mode::Home;
+                    Action::SelectFolder(self.key_input.clone())
+                }
                 _ => Action::Resume,
             },
             Mode::Home => match key.code {
@@ -128,11 +155,19 @@ impl Component for Home {
                 KeyCode::Down => Action::MoveDown,
                 KeyCode::Enter => match self.index {
                     0 => Action::EnterDownloader,
-                    1 => Action::EnterEditing,
+                    1 => Action::EnterManager,
                     2 => Action::Resume,
                     3 => Action::Quit,
                     _ => Action::Resume,
                 },
+                _ => Action::Resume,
+            },
+            Mode::Downloader => match key.code {
+                KeyCode::Enter => Action::SelectPlaylist(self.index),
+                _ => Action::Resume,
+            },
+            Mode::Manager => match key.code {
+                KeyCode::Enter => Action::SelectActivePlaylist(self.index),
                 _ => Action::Resume,
             },
             _ => Action::Resume,
@@ -141,12 +176,6 @@ impl Component for Home {
     }
 
     fn draw(&mut self, f: &mut Frame<'_>, area: Rect) -> Result<()> {
-        let chunks = Layout::new(
-            Direction::Horizontal,
-            [Constraint::Percentage(50), Constraint::Percentage(50)],
-        )
-        .split(area);
-
         match self.mode {
             Mode::Downloader => {
                 let playlists: Vec<ListItem> = self
@@ -167,9 +196,8 @@ impl Component for Home {
                     .block(Block::default().borders(Borders::ALL))
                     .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
-                f.render_widget(playlist_menu, chunks[0]);
+                f.render_widget(playlist_menu, area);
             }
-            Mode::Manager => {}
             Mode::Input => {
                 f.render_widget(Clear, area);
                 let popup_block = Block::default()
@@ -204,6 +232,26 @@ impl Component for Home {
                     .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
 
                 f.render_widget(menu, area)
+            }
+            Mode::Manager => {
+                let dirs: Vec<ListItem> = self
+                    .dirs
+                    .iter()
+                    .skip(self.offset)
+                    .enumerate()
+                    .map(|(i, item)| {
+                        let style = if i == self.index - self.offset {
+                            Style::default().bg(Color::Yellow).fg(Color::Black)
+                        } else {
+                            Style::default()
+                        };
+                        ListItem::new(item.clone()).style(style)
+                    })
+                    .collect();
+                let dir_menu = List::new(dirs.clone())
+                    .block(Block::default().borders(Borders::ALL))
+                    .highlight_style(Style::default().bg(Color::Yellow).fg(Color::Black));
+                f.render_widget(dir_menu, area);
             }
             _ => {}
         }
