@@ -24,7 +24,8 @@ impl Download {
 impl Component for Download {
     fn update(&mut self, action: Action) -> Result<Option<Action>> {
         match action {
-            Action::SelectPlaylist(_, _) => self.mode = Mode::Downloading,
+            Action::SelectPlaylist(_) => self.mode = Mode::Downloading,
+            Action::SelectActivePlaylist(_) => self.mode = Mode::Downloading,
             Action::DownloadFinished => self.mode = Mode::Idle,
             Action::Downloading(output) => {
                 self.download_output.push_str(&output);
@@ -48,7 +49,7 @@ impl Component for Download {
                     .style(Style::default().fg(Color::White).bg(Color::Black))
                     .block(Block::default().borders(Borders::ALL).title("Output"));
 
-                f.render_widget(output, chunks[1]);
+                f.render_widget(output, rect);
             }
             _ => {}
         }
