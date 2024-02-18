@@ -19,6 +19,11 @@ impl Download {
             download_output: String::new(),
         }
     }
+
+    fn reset(&mut self) {
+        self.download_output.clear();
+        self.mode = Mode::Idle;
+    }
 }
 
 impl Component for Download {
@@ -26,7 +31,7 @@ impl Component for Download {
         match action {
             Action::SelectPlaylist(_) => self.mode = Mode::Downloading,
             Action::SelectActivePlaylist(_) => self.mode = Mode::Downloading,
-            Action::BackHome => self.mode = Mode::Idle,
+            Action::BackHome => self.reset(),
             Action::Downloading(output) => {
                 self.download_output.push_str(&output);
                 self.download_output.push('\n');
