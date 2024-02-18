@@ -24,13 +24,16 @@ pub enum Action {
     MoveDown,
     EnterEditing,
     QuitEditing,
-    Save,
+    SelectFolder(String),
     // Download Actions
     EnterDownloader,
-    SelectPlaylist(String, usize),
-    Downloading(String),
-    DownloadFinished,
+    SelectPlaylist(usize),
     // Manage Actions
     EnterManager,
-    SelectFolder(String),
+    GetDirs(Vec<String>),
+    SelectActivePlaylist(usize),
+
+    // Output functions
+    Downloading(String),
+    DownloadFinished,
 }
