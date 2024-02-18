@@ -5,6 +5,7 @@ pub enum Mode {
     #[default]
     Home,
     Input,
+    Waiting,
 
     // Download menu
     Downloader,

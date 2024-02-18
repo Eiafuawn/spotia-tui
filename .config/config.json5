@@ -9,13 +9,13 @@
       "<k>": "MoveUp",
     },
     "Downloader": {
-      "<q>": "Quit",
+      "<q>": "BackHome",
       "<j>": "MoveDown",
       "<k>": "MoveUp",
       "<Ctrl-z>": "Suspend",
     },
     "Manager": {
-      "<q>": "Quit",
+      "<q>": "BackHome",
       "<j>": "MoveDown",
       "<k>": "MoveUp",
       "<Ctrl-z>": "Suspend",

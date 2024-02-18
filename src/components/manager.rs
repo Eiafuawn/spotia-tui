@@ -94,7 +94,7 @@ impl Manager {
             .map_while(|line| line.ok())
             .for_each(|line| self.send_output(line));
 
-        self.send_output("Zipping finished!".to_string());
+        self.send_output("Zipping finished! Press Enter to go back to the menu".to_string());
         sleep(std::time::Duration::from_secs(2));
 
         if let Some(tx) = &self.command_tx {
@@ -130,7 +130,7 @@ impl Manager {
             .arg(name)
             .spawn()?;
 
-        self.send_output("Unzipping finished!".to_string());
+        self.send_output("Unzipping finished! Press Enter to go back to the menu".to_string());
         sleep(std::time::Duration::from_secs(2));
 
         if let Some(tx) = &self.command_tx {

@@ -150,7 +150,7 @@ impl Spotify {
             .map_while(|line| line.ok())
             .for_each(|line| self.send_output(line));
 
-        self.send_output("Syncing finished!".to_string());
+        self.send_output("Syncing finished! Press Enter to go back to the menu".to_string());
 
         if let Some(tx) = &self.command_tx {
             tx.send(Action::DownloadFinished).unwrap();
@@ -182,7 +182,7 @@ impl Spotify {
             .lines()
             .map_while(|line| line.ok())
             .for_each(|line| self.send_output(line));
-        self.send_output("Download finished!".to_string());
+        self.send_output("Download finished! Press Enter to go back to the menu".to_string());
 
         if let Some(tx) = &self.command_tx {
             tx.send(Action::DownloadFinished).unwrap();

@@ -119,7 +119,8 @@ impl Component for Home {
             Action::SelectFolder(_) => self.mode = Mode::Home,
             Action::EnterManager => self.mode = Mode::Manager,
             Action::GetDirs(dirs) => self.enter_manager(dirs),
-            Action::DownloadFinished => self.enter_home(),
+            Action::DownloadFinished => self.mode = Mode::Waiting,
+            Action::BackHome => self.enter_home(),
             Action::QuitEditing => {
                 self.mode = Mode::Home;
                 self.key_input = env::var("HOME").unwrap_or("".to_string())
@@ -170,6 +171,10 @@ impl Component for Home {
                 KeyCode::Enter => Action::SelectActivePlaylist(self.index),
                 _ => Action::Resume,
             },
+            Mode::Waiting => match key.code {
+                KeyCode::Enter => Action::BackHome,
+                _ => Action::Resume,
+            }
             _ => Action::Resume,
         };
         Ok(Some(action))

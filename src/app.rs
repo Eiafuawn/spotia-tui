@@ -138,10 +138,11 @@ impl App {
                         self.last_tick_key_events.drain(..);
                     }
                     Action::SelectFolder(_) => self.mode = Mode::Home,
-                    Action::DownloadFinished => self.mode = Mode::Home,
                     Action::EnterEditing => self.mode = Mode::Input,
                     Action::EnterDownloader => self.mode = Mode::Downloader,
                     Action::EnterManager => self.mode = Mode::Manager,
+                    Action::DownloadFinished => self.mode = Mode::Waiting,
+                    Action::BackHome => self.mode = Mode::Home,
                     Action::Quit => self.should_quit = true,
                     Action::Suspend => self.should_suspend = true,
                     Action::Resume => self.should_suspend = false,

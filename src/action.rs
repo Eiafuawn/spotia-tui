@@ -25,6 +25,7 @@ pub enum Action {
     EnterEditing,
     QuitEditing,
     SelectFolder(String),
+    BackHome,
     // Download Actions
     EnterDownloader,
     SelectPlaylist(usize),

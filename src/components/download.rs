@@ -26,7 +26,7 @@ impl Component for Download {
         match action {
             Action::SelectPlaylist(_) => self.mode = Mode::Downloading,
             Action::SelectActivePlaylist(_) => self.mode = Mode::Downloading,
-            Action::DownloadFinished => self.mode = Mode::Idle,
+            Action::BackHome => self.mode = Mode::Idle,
             Action::Downloading(output) => {
                 self.download_output.push_str(&output);
                 self.download_output.push('\n');
