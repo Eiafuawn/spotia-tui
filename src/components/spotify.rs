@@ -185,7 +185,6 @@ impl Spotify {
         self.send_output("Download finished!".to_string());
 
         if let Some(tx) = &self.command_tx {
-            println!("Sending DownloadFinished");
             tx.send(Action::DownloadFinished).unwrap();
         }
 
