@@ -140,7 +140,6 @@ impl Manager {
         Ok(())
     }
 
-
     fn send_output(&mut self, out: String) {
         if let Some(tx) = &self.command_tx {
             tx.send(Action::Downloading(out)).unwrap();

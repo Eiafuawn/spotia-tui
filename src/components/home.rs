@@ -174,7 +174,7 @@ impl Component for Home {
             Mode::Waiting => match key.code {
                 KeyCode::Enter => Action::BackHome,
                 _ => Action::Resume,
-            }
+            },
             _ => Action::Resume,
         };
         Ok(Some(action))
