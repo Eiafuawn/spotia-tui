@@ -108,6 +108,7 @@ impl Manager {
         self.send_output("Unzipping playlist".to_string());
         let path = self.playlists[idx].clone();
         let name = get_dir_name(&path).unwrap();
+        let archive = format!("{}.zip", name);
 
         let stdout = Command::new("unzip")
             .current_dir(self.dir.clone())
@@ -125,9 +126,8 @@ impl Manager {
             .for_each(|line| self.send_output(line));
 
         Command::new("rm")
-            .arg(name)
+            .arg(archive)
             .current_dir(self.dir.clone())
-            .arg(name)
             .spawn()?;
 
         self.send_output("Unzipping finished! Press Enter to go back to the menu".to_string());
