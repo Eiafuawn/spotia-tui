@@ -43,11 +43,13 @@ impl Component for Download {
 
     #[allow(clippy::single_match)]
     fn draw(&mut self, f: &mut Frame<'_>, rect: Rect) -> Result<()> {
-        let chunks = Layout::new(
-            Direction::Horizontal,
-            [Constraint::Percentage(50), Constraint::Percentage(50)],
-        )
-        .split(rect);
+        let row_count = rect.rows().count();
+        let out_count = self.download_output.lines().count();
+        if out_count > row_count {
+            let diff = out_count - row_count;
+            let lines = self.download_output.lines().skip(diff).collect::<Vec<_>>();
+            self.download_output = lines.join("\n");
+        }
         match self.mode {
             Mode::Downloading => {
                 let output = Paragraph::new(self.download_output.clone())
