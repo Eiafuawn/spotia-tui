@@ -3,7 +3,6 @@ use std::{
     io::{BufRead, BufReader, Error, ErrorKind, Read, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    thread::sleep,
     time::Instant,
 };
 use zip::write::{FileOptions, ZipWriter};
@@ -95,7 +94,6 @@ impl Manager {
             .for_each(|line| self.send_output(line));
 
         self.send_output("Zipping finished! Press Enter to go back to the menu".to_string());
-        sleep(std::time::Duration::from_secs(2));
 
         if let Some(tx) = &self.command_tx {
             tx.send(Action::DownloadFinished).unwrap();
@@ -131,7 +129,6 @@ impl Manager {
             .spawn()?;
 
         self.send_output("Unzipping finished! Press Enter to go back to the menu".to_string());
-        sleep(std::time::Duration::from_secs(2));
 
         if let Some(tx) = &self.command_tx {
             tx.send(Action::DownloadFinished).unwrap();
