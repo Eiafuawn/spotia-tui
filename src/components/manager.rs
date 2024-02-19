@@ -124,8 +124,8 @@ impl Manager {
             .for_each(|line| self.send_output(line));
 
         Command::new("rm")
-            .arg(archive)
             .current_dir(self.dir.clone())
+            .arg(archive)
             .spawn()?;
 
         self.send_output("Unzipping finished! Press Enter to go back to the menu".to_string());
